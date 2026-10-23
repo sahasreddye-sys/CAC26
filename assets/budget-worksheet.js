@@ -232,6 +232,15 @@ const BUDGET_FIELDS = {
     byId('r-guidelineNote').textContent = `${guide.value}% of pay before taxes. A guideline, not a rule (${guide.cite || guide.source})`;
   }
 
+  // Money boxes show thousands separators (9500 -> 9,500) once you leave them.
+  // parseAmount already ignores commas, so the math reads them the same way.
+  const withCommas = n => n.toLocaleString('en-US', { maximumFractionDigits: 2 });
+  form.addEventListener('focusout', e => {
+    if (!e.target.matches('.money-row input')) return;
+    const value = PlannerMath.parseAmount(e.target.value);
+    if (Number.isFinite(value)) e.target.value = withCommas(value);
+  });
+
   // The +/- buttons next to each money box.
   form.addEventListener('click', e => {
     const btn = e.target.closest('button[data-step]');
@@ -239,7 +248,7 @@ const BUDGET_FIELDS = {
     const input = byId(btn.dataset.for);
     const current = PlannerMath.parseAmount(input.value);
     const base = Number.isFinite(current) ? current : 0;
-    input.value = Math.max(0, base + Number(btn.dataset.step));
+    input.value = withCommas(Math.max(0, base + Number(btn.dataset.step)));
     render();
   });
 

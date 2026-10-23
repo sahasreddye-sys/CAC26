@@ -1,4 +1,4 @@
-# Raw data sources for Room to Spare
+# Raw data sources for Forsyth MarketMap
 
 Downloaded 2026-10-01. The original files are kept outside this repo (some are large). The website only uses smaller files built from them, like `data/forsyth_schools.json.gz` (made by `tools/build_school_zones.py`).
 

@@ -1,6 +1,6 @@
 # Design document: family home-buying planner (v3)
 
-Working name: to be decided. This builds on the existing House Price Evaluation Model (v2).
+App name: Forsyth MarketMap. This builds on the earlier House Price Evaluation Model (v2).
 
 ## 1. What the app is for
 

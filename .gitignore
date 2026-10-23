@@ -6,3 +6,10 @@ venv/
 .env
 .DS_Store
 node_modules/
+
+# Written by Housing_Price_Model.ipynb when it runs; the site does not use them.
+# alpharetta_export.csv and cumming_export.csv.gz include owner names and mailing addresses.
+model_*.json
+shap_*.npy
+*_export.csv
+*_export.csv.gz

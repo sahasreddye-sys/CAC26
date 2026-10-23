@@ -6,6 +6,12 @@
 <title>Forsyth MarketMap</title>
 <meta name="description" content="Forsyth MarketMap: a home-buying worksheet for Forsyth County, Georgia families. Start from your monthly budget and see what a home would really cost each month.">
 <meta name="color-scheme" content="light dark">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Forsyth MarketMap">
+<meta property="og:description" content="A home-buying worksheet for Forsyth County, Georgia families. Start from your monthly budget and see what a home would really cost each month.">
+<meta property="og:url" content="https://sahasreddye-sys.github.io/CAC26/">
+<meta property="og:image" content="https://sahasreddye-sys.github.io/CAC26/docs/screenshot.jpg">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke='%23235347' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M2 21 L9 11 L12.5 14.5 L18 6 L30 21'/%3E%3Cpath d='M11.5 23 V18.5 L16 15 L20.5 18.5 V23'/%3E%3Cpath d='M3 26.5 H29 M3 30 H21'/%3E%3C/g%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -404,6 +410,14 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
 /* ---------- budget screen (Stitch) ---------- */
 [data-screen][hidden] { display: none !important; } /* beats each screen's own display rule */
 .screen.budget { max-width: 640px; margin: 0 auto; padding: 16px 16px 24px; display: flex; flex-direction: column; gap: 12px; }
+.budget-side { display: flex; flex-direction: column; gap: 12px; }
+/* wide screens: the form on the left, the answer beside it, so nobody has to scroll to see it */
+@media (min-width: 1024px) {
+  .screen.budget { max-width: 1120px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: start; gap: 16px 24px; padding-top: 24px; }
+  .screen.budget > .notice { grid-column: 1 / -1; }
+  .budget-side { position: sticky; top: 88px; }
+}
+@media print { .budget-side { position: static; } }
 .t-hsm { font-size: 16px; line-height: 22px; font-weight: 600; letter-spacing: -.005em; }
 .t-bsm { font-size: 12px; line-height: 16px; letter-spacing: .01em; color: var(--on-surface-variant); }
 .t-label { font-size: 11px; line-height: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--on-surface-variant); }
@@ -640,6 +654,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
       </form>
     </section>
 
+    <div class="budget-side">
     <section class="sheet" aria-labelledby="secB" aria-live="polite">
       <div class="sheet-head">
         <h2 id="secB" class="t-label"><span class="dot dot-b"></span>Section B · Where your pay goes</h2>
@@ -666,6 +681,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
     <a class="cta" href="#/homes"><span>See homes</span><span class="ms">arrow_forward</span></a>
     <button class="btn-print no-print" type="button" id="budgetPrint"><span class="ms">print</span>Print or save as PDF</button>
     <p class="cta-note">The homes come from county records. They are not listings, and most are not for sale.</p>
+    </div>
   </section>
 
   <div data-screen="homes" hidden>
@@ -942,8 +958,8 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
     <img class="foot-logo" src="assets/logo.png" alt="Sahas Reddy Etikyala" width="96" height="40">
     <div>
       <p>Data: Forsyth County tax assessor parcel records, tax year 2025. A LightGBM model, 600 trees, trained on log county value with 5-fold cross-validation. Estimates follow assessed value, not market price, and are not an appraisal.</p>
-      <p><a href="https://github.com/sahasreddye-sys/house-price-evaluation-model" rel="noopener">Code and notebook on GitHub</a></p>
-      <p class="aside">This frontend was vibe coded. The model behind it, from the data cleaning to the validation, is my own original work.</p>
+      <p><a href="https://github.com/sahasreddye-sys/CAC26" rel="noopener">Code and notebook on GitHub</a></p>
+      <p class="aside">The interface was built with help from AI coding tools. The model behind it, from the data cleaning to the validation, is my own original work.</p>
     </div>
   </div>
 </footer>
@@ -960,10 +976,10 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
 
 <!-- Change this version (and the ones below) on every update so browsers load the new
      files instead of a saved old copy; GitHub Pages lets browsers keep files for 10 minutes. -->
-<script>const ASSET_VERSION = '2026-10-02d';</script>
-<script src="assets/planner-math.js?v=2026-10-02d"></script>
-<script src="assets/budget-worksheet.js?v=2026-10-02d"></script>
-<script src="assets/screens.js?v=2026-10-02d"></script>
-<script src="assets/app.js?v=2026-10-02d"></script>
+<script>const ASSET_VERSION = '2026-10-22a';</script>
+<script src="assets/planner-math.js?v=2026-10-22a"></script>
+<script src="assets/budget-worksheet.js?v=2026-10-22a"></script>
+<script src="assets/screens.js?v=2026-10-22a"></script>
+<script src="assets/app.js?v=2026-10-22a"></script>
 </body>
 </html>

@@ -622,7 +622,7 @@ function featValue(d, f, i) {
     case 'lon': case 'lat': return 'Where the home sits';
     case 'BLDGAREA': case 'RESFLRAREA': return fmtInt(v) + ' sq ft';
     case 'STATEDAREA': return v.toFixed(2) + ' acres';
-    case 'home_age': return v + ' years (built ' + (TAX_YEAR - v) + ')';
+    case 'home_age': return (v <= 0 ? 'New' : v === 1 ? '1 year' : v + ' years') + ' (built ' + (TAX_YEAR - v) + ')';
     case 'owns_lot': return v ? 'Yes' : 'No';
     default: return String(v);
   }

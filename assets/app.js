@@ -58,7 +58,6 @@ const NB = {
     ],
   },
 };
-const TIERS = ['Lowest 20%', '20–40%', '40–60%', '60–80%', 'Top 20%'];
 const TAX_YEAR = 2025;
 // "New homes" = built in the last three years of the tax roll. Homes built in
 // the tax year itself may have been valued partway through construction.
@@ -144,8 +143,7 @@ class Spring {
 
 /* ---------------- state ---------------- */
 const state = {
-  market: 'forsyth', data: {}, summary: null, sel: -1, vec: null, base: 0, est: 0,
-  sort: 'value', filter: '', shown: 25, loading: null,
+  market: 'forsyth', data: {}, sel: -1, vec: null, base: 0, est: 0, loading: null,
   listSort: 'newest', listShown: 20,
 };
 const cur = () => state.data[state.market];
@@ -221,7 +219,6 @@ function prepare(market, raw) {
   };
   d.featIndex = Object.fromEntries(model.features.map((f, k) => [f, k]));
   d.vecOf = i => model.features.map(f => X[f][i]);
-  d.sorted = {};
   return d;
 }
 
@@ -699,8 +696,13 @@ $('rNearby').addEventListener('click', e => { const b = e.target.closest('button
 const aff = { downTyped: false, rateMoved: false };
 
 // The starting "price to check" is the model's estimate.
+// Every home is judged at its likely sale price, not the county-value estimate:
+// see market.estimate_to_sale_price_ratio in planner-config.json.
+function saleRatio() { return plannerSetting('market.estimate_to_sale_price_ratio').value; }
+function salePercentAbove() { const r = saleRatio(); return r > 0 ? Math.round((1 / r - 1) * 100) : 0; }
+
 function startingPrice(d, i) {
-  return d.H.est[i];
+  return PlannerMath.likelySalePrice(d.H.est[i], saleRatio());
 }
 
 function resetAfford() {
@@ -740,7 +742,9 @@ function renderAfford() {
     : PlannerMath.downPaymentFromSavings(savings, price || 0, s.closingPercent) ?? 0;
   if (!aff.downTyped) $('affDown').placeholder = fmtInt(down);
 
-  $('affPriceNote').textContent = 'Starts at the model’s estimate. Type an asking price to check it.';
+  $('affPriceNote').textContent = salePercentAbove()
+    ? `Starts at the likely sale price: the estimate +${salePercentAbove()}%. Type an asking price to check it.`
+    : 'Starts at the model’s estimate. Type an asking price to check it.';
   $('affDownNote').textContent = typedDown != null ? 'Your number' : `From your savings after ${s.closingPercent}% closing costs`;
   $('affInsNote').textContent = quote != null ? 'Your quote, per year' : `Blank uses $${(+s.insurancePer1000).toFixed(2)} per $1,000 of value a year (${plannerSetting('insurance.homeowners_rate_per_1000').cite})`;
 
@@ -774,9 +778,14 @@ function renderAfford() {
 }
 
 function renderPriceCheck(d, i, price) {
-  const H = d.H, lo = H.est[i] * d.lowMul, hi = H.est[i] * d.highMul;
-  const parts = [`The model puts this home at <b>${fmtShort(lo)}–${fmtShort(hi)}</b>, based on county values, which usually run below sale prices.`];
-  parts.push('No Forsyth sales were available to test how far below sale prices it runs.');
+  const H = d.H, estLo = H.est[i] * d.lowMul, estHi = H.est[i] * d.highMul;
+  const up = salePercentAbove();
+  const parts = [`The model puts this home at <b>${fmtShort(estLo)}–${fmtShort(estHi)}</b>, based on county values, which usually run below sale prices.`];
+  // with a sales ratio set, an asking price is checked against the likely sale range instead
+  const lo = up ? PlannerMath.likelySalePrice(estLo, saleRatio()) : estLo;
+  const hi = up ? PlannerMath.likelySalePrice(estHi, saleRatio()) : estHi;
+  if (up) parts.push(`In 2025, Alpharetta homes sold for about ${up}% more than this project’s estimates there, so expect about <b>${fmtShort(lo)}–${fmtShort(hi)}</b>. There are no Forsyth sales to check this against yet.`);
+  else parts.push('No Forsyth sales were available to test how far below sale prices it runs.');
   const top = H.drv[i][0];
   if (top) parts.push(`The biggest reason for the model’s number: ${esc(LABELS[d.model.features[top[0]]] || '')} (${fmtPct(top[1], 0)} vs. the average home).`);
   if (price > hi) parts.push(`Your price is <b>${Math.round((price / hi - 1) * 100)}% above</b> the top of that range.`);
@@ -861,154 +870,7 @@ $('affDrop').addEventListener('change', renderAfford);
 $('affPrint').addEventListener('click', () => window.print());
 window.addEventListener('budgetchange', () => { if (state.sel >= 0) renderAfford(); });
 
-/* ---------------- sources table on "How this works" ---------------- */
-function renderCostSources() {
-  if (!plannerConfig) return;
-  const rows = [
-    ['Interest rate (starting value)', 'loan.default_interest_rate', v => v + '%'],
-    ['Loan length (starting value)', 'loan.default_term_years', v => v + ' years'],
-    ['Lowest down payment allowed', 'loan.minimum_down_payment_percent', v => v + '% of price'],
-    ['Share of value that is taxed', 'property_tax.assessment_ratio', v => (v * 100) + '%'],
-    ['Forsyth tax rate', 'property_tax.millage.forsyth_county', v => v + ' mills'],
-    ['Homestead exemption', 'property_tax.homestead_exemption', v => fmtUSD(v)],
-    ['Home insurance', 'insurance.homeowners_rate_per_1000', v => `$${(+v).toFixed(2)} per $1,000 a year`],
-    ['Mortgage insurance', 'mortgage_insurance.monthly_per_100k', v => `$${v}/mo per $100,000`],
-    ['Mortgage insurance applies under', 'mortgage_insurance.required_below_down_payment_percent', v => v + '% down'],
-    ['Closing costs', 'closing_costs.percent_of_price', v => v + '% of price'],
-    ['Housing guideline (reference only)', 'guidelines.housing_share_of_gross_income', v => v + '% of pay before taxes'],
-    ['Comfortable cutoff', 'comfort.comfortable_min_left_percent', v => v + '% left'],
-    ['Stretching cutoff', 'comfort.stretching_below_left_percent', v => 'under ' + v + '% left'],
-  ];
-  const link = src => esc(src).replace(/(https?:\/\/[^\s)]+)/g, '<a href="$1" target="_blank" rel="noopener">source ↗</a>');
-  $('costSources').innerHTML = '<thead><tr><th>What</th><th>Value</th><th>Source</th><th>As of</th></tr></thead><tbody>' + rows.map(([name, path, fmt]) => {
-    const e = plannerSetting(path);
-    return e.value == null
-      ? `<tr><td>${name}</td><td class="unset">not set yet</td><td class="src">${esc(e.note || '')}</td><td>—</td></tr>`
-      : `<tr><td>${name}</td><td>${fmt(e.value)}</td><td class="src">${link(e.source)}</td><td>${esc(e.as_of)}</td></tr>`;
-  }).join('') + '</tbody>';
-}
-window.addEventListener('budgetchange', renderCostSources);
 $('budgetPrint').addEventListener('click', () => window.print());
-
-/* ============================================================
-   Charts (hand-built SVG so they follow the theme)
-   ============================================================ */
-function svg(w, h, body, label) { return `<svg viewBox="0 0 ${w} ${h}" role="img" aria-label="${esc(label)}">${body}</svg>`; }
-
-function errChart() {
-  const s = state.summary && state.summary[state.market]; if (!s) return;
-  const hst = s.err_hist, nb = NB[state.market];
-  const W = 520, Hh = 200, L = 4, R = 4, T = 8, B = 24;
-  const n = hst.counts.length, bw = (W - L - R) / n, max = Math.max(...hst.counts);
-  const xOf = p => L + (p - hst.lo) / (hst.hi - hst.lo) * (W - L - R);
-  // (est - cv) / cv inside the band  <=>  cv in [est*e^lo, est*e^hi]
-  const b0 = (Math.exp(-nb.bandHi) - 1) * 100, b1 = (Math.exp(-nb.bandLo) - 1) * 100;
-  let body = `<rect x="${xOf(b0)}" y="${T}" width="${xOf(b1) - xOf(b0)}" height="${Hh - T - B}" fill="var(--tint)"/>`;
-  hst.counts.forEach((c, k) => {
-    const h = c / max * (Hh - T - B - 4);
-    body += `<rect x="${(L + k * bw + 0.6).toFixed(1)}" y="${(Hh - B - h).toFixed(1)}" width="${(bw - 1.2).toFixed(1)}" height="${h.toFixed(1)}" fill="var(--mkt)"/>`;
-  });
-  body += `<line x1="${L}" x2="${W - R}" y1="${Hh - B}" y2="${Hh - B}" stroke="var(--ink)"/>`;
-  body += `<line x1="${xOf(0)}" x2="${xOf(0)}" y1="${T}" y2="${Hh - B}" stroke="var(--ink)" stroke-dasharray="2 3"/>`;
-  for (const t of [-40, -20, 0, 20, 40]) body += `<text x="${xOf(t)}" y="${Hh - 6}" text-anchor="middle">${t > 0 ? '+' : t < 0 ? '−' : ''}${Math.abs(t)}%</text>`;
-  body += `<text x="${xOf(b1) + 6}" y="${T + 12}">80% range</text>`;
-  $('errChart').innerHTML = svg(W, Hh, body, `Histogram of estimate errors for ${nb.name}; the 80% range runs from ${b0.toFixed(0)}% to +${b1.toFixed(0)}%.`);
-  $('errCap').innerHTML = `<b>Estimate vs. county value, ${nb.name}.</b> Each bar is 2 points wide; the shaded band is the 80% range. Misses past ±40% are piled into the end bars.`;
-}
-
-function covChart() {
-  const nb = NB[state.market];
-  const W = 520, Hh = 200, L = 36, R = 4, T = 18, B = 24;
-  const n = 5, slot = (W - L - R) / n, bw = Math.min(46, slot * 0.5);
-  const y = v => T + (1 - v) * (Hh - T - B);
-  let body = '';
-  for (const t of [0.5, 1]) body += `<line x1="${L}" x2="${W - R}" y1="${y(t)}" y2="${y(t)}" stroke="var(--rule)"/><text x="${L - 8}" y="${y(t) + 4}" text-anchor="end">${t * 100}%</text>`;
-  nb.tiers.forEach((v, k) => {
-    const x = L + k * slot + (slot - bw) / 2;
-    const short = v < 0.75;
-    body += `<rect x="${x}" y="${y(v)}" width="${bw}" height="${y(0) - y(v)}" fill="${short ? 'var(--down)' : 'var(--mkt)'}"/>`;
-    body += `<text x="${x + bw / 2}" y="${y(v) - 6}" text-anchor="middle" class="strong">${Math.round(v * 100)}%</text>`;
-    body += `<text x="${x + bw / 2}" y="${Hh - 6}" text-anchor="middle">${TIERS[k]}</text>`;
-  });
-  body += `<line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" stroke="var(--ink)"/>`;
-  body += `<line x1="${L}" x2="${W - R}" y1="${y(0.8)}" y2="${y(0.8)}" stroke="var(--ink)" stroke-dasharray="4 3"/><text x="${W - R}" y="${y(0.8) - 5}" text-anchor="end">target 80%</text>`;
-  $('covChart').innerHTML = svg(W, Hh, body, `Share of ${nb.name} homes inside their 80% range by price tier: ${nb.tiers.map((v, k) => TIERS[k] + ' ' + Math.round(v * 100) + '%').join(', ')}.`);
-  $('covCap').innerHTML = `<b>Does the range hold at every price?</b> Share of ${nb.name} homes whose county value lands inside their range, by price fifth. Red falls short of 80%.`;
-}
-
-function stepChart() {
-  const nb = NB[state.market];
-  const two = nb.steps[0].b !== undefined;
-  const max = Math.max(...nb.steps.map(s => Math.max(s.a, s.b || 0)));
-  const bar = (v, cls) => `<div class="bar ${cls}"><span class="track"><i style="width:${(v / max * 100).toFixed(1)}%"></i></span><span>${v.toFixed(2)}%</span></div>`;
-  $('stepChart').innerHTML = `<thead><tr><th>Inputs (${esc(nb.name)})</th><th>Median error, random folds</th>${two ? '<th>Neighborhoods held out</th>' : ''}</tr></thead><tbody>` +
-    nb.steps.map(s => `<tr><td>${esc(s.name)}</td><td>${bar(s.a, 'a')}</td>${two ? `<td>${bar(s.b, 'b')}</td>` : ''}</tr>`).join('') + '</tbody>';
-  $('stepSub').innerHTML = two
-    ? '<b>What each step bought.</b> Random folds test homes whose neighbors the model has seen. Holding out whole neighborhoods is the harder test, and it is where the building details paid off most.'
-    : '<b>What each step bought.</b> Taking away the county’s land value cost a little. Construction grade, structure type and coordinates won most of it back.';
-}
-
-function scoreboard() {
-  const f = NB.forsyth;
-  const rows = [
-    ['Median error', 'half the estimates land closer than this', v => v.medape.toFixed(1) + '%'],
-    ['Within 10% of county value', '', v => v.w10.toFixed(1) + '%'],
-    ['Mean absolute error', 'the typical miss in dollars', v => fmtUSD(v.mae)],
-    ['R²', '', v => v.r2.toFixed(3)],
-    ['80% range coverage', 'checked on a held-out half of homes', v => (v.cov * 100).toFixed(1) + '%'],
-    ['Homes scored', '', v => fmtInt(v.n)],
-  ];
-  $('scoreboard').innerHTML =
-    `<thead><tr><th></th><th>Forsyth County</th></tr></thead><tbody>` +
-    rows.map(([k, s, fn]) => `<tr><td>${k}${s ? `<small>${s}</small>` : ''}</td><td>${fn(f)}</td></tr>`).join('') + '</tbody>';
-}
-
-function caveats() {
-  const nb = NB[state.market];
-  const top = Math.round(nb.tiers[4] * 100);
-  const items = [
-    `<b>The priciest homes.</b> For the top fifth of ${nb.name} homes by value, the range catches the county value ${top}% of the time, not 80%. Read estimates on expensive homes as looser than the range says.`,
-  ];
-  items.push(`<b>A few big misses.</b> Mean error is ${nb.mape.toFixed(1)}% against a ${nb.medape.toFixed(1)}% median: most homes are close, and a small group of unusual ones miss badly.`);
-  // the only check against real sale prices came from an earlier version that also covered Alpharetta (housing_model_v2.ipynb)
-  items.push('<b>No sales check here yet.</b> The Forsyth data has no sale records, so these estimates are compared only with county values. An earlier version of this project also covered Alpharetta, where 2025 sales closed about 27% above county values, so expect estimates based on county values to come in under what homes actually sell for.');
-  $('caveats').innerHTML = items.map(t => `<li>${t}</li>`).join('');
-}
-
-/* ============================================================
-   Browse table
-   ============================================================ */
-function sortedIdx() {
-  const d = cur(), H = d.H;
-  if (d.sorted[state.sort]) return d.sorted[state.sort];
-  const idx = Array.from({ length: d.n }, (_, i) => i);
-  const ratio = i => H.est[i] / H.cv[i];
-  const cmp = {
-    value: (a, b) => H.est[b] - H.est[a],
-    above: (a, b) => ratio(b) - ratio(a),
-    below: (a, b) => ratio(a) - ratio(b),
-    newest: (a, b) => (H.yr[b] || 0) - (H.yr[a] || 0) || H.est[b] - H.est[a],
-  }[state.sort];
-  return (d.sorted[state.sort] = idx.sort(cmp));
-}
-function renderTable() {
-  const d = cur(); if (!d) return;
-  const H = d.H, q = state.filter.trim().toLowerCase();
-  let list = sortedIdx();
-  if (q) list = list.filter(i => d.lower[i].includes(q) || d.subOf(i).toLowerCase().includes(q));
-  const rows = list.slice(0, state.shown);
-  $('homesBody').innerHTML = rows.map(i => {
-    const gap = (H.est[i] - H.cv[i]) / H.cv[i] * 100;
-    return `<tr data-i="${i}" tabindex="0"><td>${esc(H.addr[i] || H.id[i])}</td><td>${fmtUSD(H.est[i])}</td><td>${fmtUSD(H.cv[i])}</td><td class="gap ${gap >= 0 ? 'pos' : 'neg'}">${fmtPct(gap)}</td><td>${H.sqft[i] ? fmtInt(H.sqft[i]) : '—'}</td><td>${H.yr[i] || '—'}</td></tr>`;
-  }).join('') || `<tr><td colspan="6" style="color:var(--ink-2)">No homes match “${esc(state.filter)}”.</td></tr>`;
-  $('moreBtn').hidden = rows.length >= list.length;
-  $('moreCount').textContent = `Showing ${fmtInt(rows.length)} of ${fmtInt(list.length)}`;
-}
-$('homesBody').addEventListener('click', e => { const tr = e.target.closest('tr[data-i]'); if (tr) selectHome(+tr.dataset.i, { from: 'table' }); });
-$('homesBody').addEventListener('keydown', e => { if (e.key === 'Enter') { const tr = e.target.closest('tr[data-i]'); if (tr) selectHome(+tr.dataset.i, { from: 'table' }); } });
-$('moreBtn').addEventListener('click', () => { state.shown += 50; renderTable(); });
-let filterT = 0;
-$('filter').addEventListener('input', e => { clearTimeout(filterT); filterT = setTimeout(() => { state.filter = e.target.value; state.shown = 25; renderTable(); }, 90); });
 
 /* ============================================================
    Segmented controls
@@ -1020,7 +882,6 @@ function initSeg(seg, onPick) {
     onPick(b);
   });
 }
-initSeg($('sortSeg'), b => { state.sort = b.dataset.sort; state.shown = 25; renderTable(); });
 
 /* ============================================================
    Market switching + boot
@@ -1113,7 +974,9 @@ function applyFilters() {
   let fitsProblem = '';
   if (f.fits && !budgetIsFilledIn()) fitsProblem = 'Fill in your budget first. This setting is off until then.';
   else if (f.fits && homeFitLabel(d, 0).label == null) fitsProblem = 'A cost source is missing, so this setting is off.';
-  $('fFitsNote').textContent = fitsProblem || 'Uses your budget and each home’s estimate as the price';
+  $('fFitsNote').textContent = fitsProblem || (salePercentAbove()
+    ? `Uses your budget and each home’s likely sale price (the estimate +${salePercentAbove()}%)`
+    : 'Uses your budget and each home’s estimate as the price');
   $('fFitsNote').classList.toggle('partial', !!fitsProblem);
   const useFits = f.fits && !fitsProblem;
   const list = [];
@@ -1173,13 +1036,24 @@ function renderHomeList() {
     + (d.aboveBudget ? ` ${on.length ? '<br>' : ''}${fmtInt(d.aboveBudget)} more homes match your other settings but are above your budget or your savings.` : '');
   $('activeSettings').hidden = !on.length && !d.aboveBudget;
   const H = d.H;
+  const limit = comfortableLimit();
+  const sort = listSortInUse(limit);
   const cmp = {
+    closest: null,
     newest: (a, b) => (H.yr[b] || 0) - (H.yr[a] || 0) || H.est[b] - H.est[a],
     low: (a, b) => H.est[a] - H.est[b],
     high: (a, b) => H.est[b] - H.est[a],
     big: (a, b) => (H.sqft[b] || 0) - (H.sqft[a] || 0),
-  }[state.listSort];
-  const list = d.matchList.slice().sort(cmp);
+  }[sort];
+  let list;
+  if (sort === 'closest') {
+    const key = new Float64Array(d.n);
+    for (const i of d.matchList) {
+      const price = startingPrice(d, i);
+      key[i] = PlannerMath.budgetDistance(familyHomeCost(d.market, price).total, limit, savingsCoverPrice(d.market, price));
+    }
+    list = d.matchList.slice().sort((a, b) => key[a] - key[b]);
+  } else list = d.matchList.slice().sort(cmp);
   $('listCount').textContent = list.length === d.n ? `${fmtInt(d.n)} homes` : `${fmtInt(list.length)} of ${fmtInt(d.n)}`;
   const rows = list.slice(0, state.listShown);
   $('homeList').innerHTML = rows.map(i => {
@@ -1191,7 +1065,7 @@ function renderHomeList() {
       : `<small class="r">county ${fmtShort(H.cv[i])}</small>`;
     if (budgetIsFilledIn()) {
       const fit = homeFitLabel(d, i);
-      if (fit.cost != null) note = `<small class="r">≈ ${fmtUSD(fit.cost)}/mo${fit.label ? ` · <span class="fit ${fit.label}">${fit.label}</span>` : ''}${fit.cashOk ? '' : ' · <span class="fit Stretching">needs more savings</span>'}${mayBePartlyBuilt(d, i) ? ' · <span class="partial">may be partly built</span>' : ''}</small>`;
+      if (fit.cost != null) note = `<small class="r">≈ ${fmtUSD(fit.cost)}/mo at ${fmtShort(startingPrice(d, i))}${fit.label ? ` · <span class="fit ${fit.label}">${fit.label}</span>` : ''}${fit.cashOk ? '' : ' · <span class="fit Stretching">needs more savings</span>'}${mayBePartlyBuilt(d, i) ? ' · <span class="partial">may be partly built</span>' : ''}</small>`;
     }
     return `<li><button type="button" data-i="${i}"><span class="a">${esc(H.addr[i] || H.id[i])}</span><span class="v">${fmtShort(lo)}–${fmtShort(hi)}</span><small>${esc(bits)}</small>${note}</button></li>`;
   }).join('') || (d.hiddenByOthers
@@ -1215,7 +1089,26 @@ $('fReset').addEventListener('click', () => {
 });
 $('homeList').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) selectHome(+b.dataset.i, { from: 'list' }); });
 $('listMore').addEventListener('click', () => { state.listShown += 20; renderHomeList(); });
-initSeg($('listSort'), b => { state.listSort = b.dataset.sort; state.listShown = 20; renderHomeList(); });
+initSeg($('listSort'), b => { state.listSort = b.dataset.sort; state.listSortPicked = true; state.listShown = 20; renderHomeList(); });
+
+// The most the family can spend on housing each month and stay comfortable, or null.
+function comfortableLimit() {
+  if (!budgetIsFilledIn()) return null;
+  const b = familyBudget;
+  return PlannerMath.comfortableHousingLimit(b.takeHome, b.debts, b.otherCosts, plannerSetting('comfort.comfortable_min_left_percent').value);
+}
+
+// "Closest to your budget" only shows once there is a budget to be close to, and
+// it is the starting sort then, until someone picks a sort themselves.
+function listSortInUse(limit) {
+  const canClose = limit != null;
+  let sort = state.listSortPicked ? state.listSort : (canClose ? 'closest' : 'newest');
+  if (sort === 'closest' && !canClose) sort = 'newest';
+  const seg = $('listSort');
+  seg.querySelector('[data-sort="closest"]').hidden = !canClose;
+  seg.querySelectorAll('button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.sort === sort)));
+  return sort;
+}
 
 function setStatus(msg, error) { const s = $('status'); s.textContent = msg; s.classList.toggle('error', !!error); }
 
@@ -1227,8 +1120,6 @@ async function setMarket(market, selectId) {
   $('tabDetail').href = '#/detail';
   $('q').value = ''; search.items = []; renderSuggest();
   if (currentScreen === 'homes') history.replaceState(null, '', '#/homes/' + market);
-  errChart(); covChart(); stepChart(); caveats();
-  $('exploreTitle').textContent = `All ${nb.name} homes`;
 
   if (!state.data[market]) {
     $('q').disabled = true; $('tryRow').hidden = true; $('legend').hidden = true;
@@ -1245,7 +1136,7 @@ async function setMarket(market, selectId) {
   if (state.market !== market) return; // the user switched again while this loaded
   $('mapSkel').hidden = true; $('legend').hidden = false; $('q').disabled = false;
   setStatus('');
-  buildRamp(); sizeMap(); resetCam(false); renderTry(); renderTable(); renderStats(d);
+  buildRamp(); sizeMap(); resetCam(false); renderTry(); renderStats(d);
   setupFilters(d); applyFilters();
   if (selectId) {
     const i = d.H.id.indexOf(selectId);
@@ -1266,8 +1157,6 @@ $('themeBtn').addEventListener('click', () => {
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { themeLabel(); buildRamp(); drawMap(); });
 
 (async function boot() {
-  scoreboard();
-  fetchJSON('data/summary.json').then(s => { state.summary = s; errChart(); }).catch(() => {});
   const route = parseScreenRoute(location.hash);
   await setMarket('forsyth', route.id);
   window.addEventListener('hashchange', () => {

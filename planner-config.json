@@ -26,6 +26,16 @@
       "cite": "Freddie Mac Home Possible"
     }
   },
+  "market": {
+    "estimate_to_sale_price_ratio": {
+      "value": 0.78,
+      "unit": "model estimate divided by sale price (median)",
+      "source": "This project's sales check (housing_model_v2.ipynb, saved in data/summary.json under alpharetta_sales_check, 2025): 308 Alpharetta homes sold in 2025, and the model's estimate was a median 0.78 of the sale price (county values were 0.786).",
+      "as_of": "2025 sales",
+      "note": "Measured in Alpharetta (Fulton County), not Forsyth: Forsyth has no open sale records yet. The planner divides each estimate by this to get a likely sale price (about 28% higher), so homes are not judged as cheaper than they sell for. Replace with a Forsyth number once the Board of Assessors sales records arrive.",
+      "cite": "2025 Alpharetta sales check"
+    }
+  },
   "property_tax": {
     "assessment_ratio": {
       "value": 0.4,

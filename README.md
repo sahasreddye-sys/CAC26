@@ -32,7 +32,7 @@ The planner is a learning project. It is not financial advice, a loan offer or a
 ## How the site works
 
 1. `housing_model_v2.ipynb` trains the models and saves them along with their accuracy numbers.
-2. `data/forsyth.json.gz` holds every home, its estimate and lower/upper range, and the model's trees so the browser can explain an estimate. `data/summary.json` holds the accuracy numbers shown on the site.
+2. `data/forsyth.json.gz` holds every home, its estimate and lower/upper range, and the model's trees so the browser can explain an estimate. `data/summary.json` holds the accuracy numbers, including the 2025 sales check behind the likely sale price.
 3. `index.html` loads those files and works everything out in the browser, so there is no server.
 4. `tools/build_school_zones.py` matches homes to school zones ahead of time.
 

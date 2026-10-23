@@ -155,6 +155,26 @@ const PlannerMath = {
     return Math.floor(savings / ((closingPercent + minDownPercent) / 100) / 100) * 100;
   },
 
+  // The model learns county values, and county values run below what homes
+  // sell for. A sales check measured   estimate / sale price  (e.g. 0.78), so
+  //   likely sale price = estimate / ratio
+  // With no ratio set, the estimate is used as is.
+  likelySalePrice(estimate, estimateToSaleRatio) {
+    if (estimate == null) return null;
+    if (!(estimateToSaleRatio > 0)) return estimate;
+    return estimate / estimateToSaleRatio;
+  },
+
+  // Sort key for "closest to your budget": how far a home's monthly cost is from
+  // the most the family can spend and stay comfortable. Smaller is closer.
+  // Homes at or under the limit come first (nearest the limit first), then homes
+  // over it, then homes the savings can't cover; unknown costs come last.
+  budgetDistance(monthlyCost, comfortableLimit, cashOk) {
+    if (monthlyCost == null || comfortableLimit == null) return Infinity;
+    const gap = monthlyCost - comfortableLimit;
+    return (cashOk === false ? 1e12 : 0) + (gap > 0 ? 1e9 + gap : -gap);
+  },
+
   monthsToSave(shortfall, savedPerMonth) {
     if (shortfall == null || shortfall <= 0) return 0;
     if (!savedPerMonth) return null;

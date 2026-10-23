@@ -8,8 +8,6 @@
 //   #/homes                       home lookup and map
 //   #/home/forsyth/<parcel id>    one home (the Detail tab)
 //   #/detail                      Detail tab with no home picked yet
-//   #/how                         how this works
-//   #/how/accuracy                a section inside "how this works"
 //
 // Links from the older site (#forsyth/<id>) still open the home.
 
@@ -18,13 +16,11 @@ function parseScreenRoute(hash) {
   let m = h.match(/^#\/homes?(?:\/(forsyth)(?:\/(.+))?)?$/) || h.match(/^#(forsyth)(?:\/(.+))?$/);
   if (m) return { screen: m[2] ? 'detail' : 'homes', market: m[1] || null, id: m[2] || null };
   if (h === '#/detail') return { screen: 'detail', market: null, id: null };
-  m = h.match(/^#\/how(?:\/([\w-]+))?$/);
-  if (m) return { screen: 'how', section: m[1] || null };
   return { screen: 'budget' };
 }
 
 const APP_NAME = 'Forsyth MarketMap';
-const SCREEN_TITLES = { budget: 'Budget', homes: 'Homes', detail: 'Home detail', how: 'How this works' };
+const SCREEN_TITLES = { budget: 'Budget', homes: 'Homes', detail: 'Home detail' };
 
 function markScreenTabs(route) {
   const tab = route.screen;

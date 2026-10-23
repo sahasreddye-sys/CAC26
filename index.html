@@ -578,7 +578,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
         </div>
         <button class="btn-clear" type="button" id="clearBudget">Clear all</button>
       </div>
-      <p class="notice-step"><span class="ms">info</span><span>Step 1 of 4: start with what your family earns and spends.</span><span class="clear-note" id="clearNote" role="status"></span></p>
+      <p class="notice-step"><span class="ms">info</span><span>Step 1 of 3: start with what your family earns and spends.</span><span class="clear-note" id="clearNote" role="status"></span></p>
     </div>
 
     <section class="sheet" aria-labelledby="secA">
@@ -703,7 +703,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
           <button class="btn-clear" type="button" id="fReset">Reset</button>
         </div>
         <label class="toggle-row" for="fFits">
-        <span><b>Only homes that fit my budget</b><small id="fFitsNote">Uses your budget and each home’s estimate as the price</small></span>
+        <span><b>Only homes that fit my budget</b><small id="fFitsNote">Uses your budget and each home’s likely sale price</small></span>
         <input type="checkbox" class="switch" id="fFits">
       </label>
       <label class="tight-row" for="fTight"><input type="checkbox" id="fTight"> Include homes that would be tight</label>
@@ -759,6 +759,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
       </div>
       <p class="t-bsm">From the <span id="listTaxYear">2025</span> county tax records. These are homes in the area, not listings, so most are not for sale. Brand-new homes may have been valued while still being built, so their estimates can come out too low.</p>
       <div class="sorts" id="listSort" role="group" aria-label="Sort homes">
+        <button type="button" data-sort="closest" aria-pressed="false" hidden>Closest to your budget</button>
         <button type="button" data-sort="newest" aria-pressed="true">Newest</button>
         <button type="button" data-sort="low" aria-pressed="false">Lowest estimate</button>
         <button type="button" data-sort="high" aria-pressed="false">Highest estimate</button>
@@ -857,100 +858,6 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
   </section>
   </div>
 
-  <div data-screen="how" hidden>
-  <section class="report" id="costs">
-    <div class="wrap">
-      <div class="side">
-        <h2>How the monthly cost works</h2>
-        <p>Everything a home costs each month, added up. Each number below comes from the source listed, and the planner never fills in a number it doesn’t have a source for.</p>
-      </div>
-      <div class="main">
-        <ol class="notes">
-          <li><b>Loan payment.</b> The standard fixed-rate formula: payment = P × r × (1 + r)<sup>n</sup> ÷ ((1 + r)<sup>n</sup> − 1), where P is the loan, r the monthly rate and n the number of months.</li>
-          <li><b>Property tax.</b> Georgia taxes 40% of a home’s value, times the local millage rate (dollars per $1,000), divided by 12.</li>
-          <li><b>Home insurance.</b> An average cost per $1,000 of value, unless you type in a real quote.</li>
-          <li><b>Mortgage insurance.</b> Only when the down payment is under 20%.</li>
-          <li><b>Down payment.</b> Your savings minus closing costs, the way the CFPB suggests working it out.</li>
-          <li><b>Comfort label.</b> What’s left of take-home pay after every monthly bill, including the home. Comfortable means at least the first cutoff is left; stretching means less than the second.</li>
-        </ol>
-        <div>
-          <p class="lead"><b>The numbers and where they come from.</b> They live in <code>planner-config.json</code>. “Not set yet” means no official source has been found.</p>
-          <div class="table-wrap"><table id="costSources"></table></div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="report" id="accuracy">
-    <div class="wrap">
-      <div class="side">
-        <h2>How close it gets</h2>
-        <p>Every estimate here is out-of-fold: the model that priced a home never saw it during training. The benchmark is the county’s own assessed value.</p>
-      </div>
-      <div class="main">
-        <table class="scores" id="scoreboard"></table>
-        <div class="figs">
-          <figure class="fig"><div id="errChart"></div><figcaption id="errCap"></figcaption></figure>
-          <figure class="fig"><div id="covChart"></div><figcaption id="covCap"></figcaption></figure>
-        </div>
-        <div>
-          <p class="lead"><b>Where to be careful</b></p>
-          <ol class="notes" id="caveats"></ol>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="report" id="v2">
-    <div class="wrap">
-      <div class="side">
-        <h2>Changes in v2</h2>
-        <p>v1 covered a 1,653-home sample of Cumming and leaned on the county’s own land value. v2 covers all of Forsyth County, drops that land value, and tests its range.</p>
-      </div>
-      <div class="main">
-        <dl class="log">
-          <div><dt>All of Forsyth County</dt><dd>80,306 homes instead of a 1,653-home sample from Cumming.</dd></div>
-          <div><dt>No county land value</dt><dd>v1 leaned on the assessor’s land value, which nobody outside the assessor’s office would have. v2 drops it and still lands within 0.1 points of v1’s median error.</dd></div>
-          <div><dt>Construction grade and structure type</dt><dd>Two more county fields that describe how a home is built.</dd></div>
-          <div><dt>Coordinates</dt><dd>Latitude and longitude, so the model can separate streets that share a neighborhood code.</dd></div>
-          <div><dt>A tested range</dt><dd>The 80% range is set from the model’s own errors, then checked on a held-out half of homes: 80.0% coverage.</dd></div>
-        </dl>
-        <div>
-          <p class="lead" id="stepSub"></p>
-          <table class="steps" id="stepChart"></table>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section class="report" id="explore">
-    <div class="wrap">
-      <div class="side">
-        <h2 id="exploreTitle">All homes</h2>
-        <p>Sort the whole market, or find where the model and the county disagree most. Pick a row to open the record.</p>
-      </div>
-      <div class="main">
-        <div class="tools">
-          <div class="sorts" id="sortSeg" role="group" aria-label="Sort homes">
-            <button type="button" data-sort="value" aria-pressed="true">Highest estimate</button>
-            <button type="button" data-sort="above" aria-pressed="false">Model above county</button>
-            <button type="button" data-sort="below" aria-pressed="false">Model below county</button>
-            <button type="button" data-sort="newest" aria-pressed="false">Newest</button>
-          </div>
-          <label class="sr" for="filter">Filter by street or subdivision</label>
-          <input class="filter" id="filter" type="search" placeholder="Filter by street or subdivision">
-        </div>
-        <div class="table-wrap">
-          <table class="homes">
-            <thead><tr><th>Address</th><th>Estimate</th><th>County value</th><th>Difference</th><th>Sq ft</th><th>Built</th></tr></thead>
-            <tbody id="homesBody"></tbody>
-          </table>
-        </div>
-        <div class="more"><button class="btn" type="button" id="moreBtn">Show 50 more</button><span id="moreCount"></span></div>
-      </div>
-    </div>
-  </section>
-  </div>
 </main>
 
 <footer class="app-foot">
@@ -970,16 +877,15 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
     <a href="#/budget" data-screen-link="budget"><span class="ms">account_balance_wallet</span><span>1. Budget</span></a>
     <a href="#/homes" data-screen-link="homes"><span class="ms">holiday_village</span><span>2. Homes</span></a>
     <a href="#/detail" data-screen-link="detail" id="tabDetail"><span class="ms">analytics</span><span>3. Detail</span></a>
-    <a href="#/how" data-screen-link="how"><span class="ms">rule</span><span>4. Method</span></a>
   </nav>
 </div>
 
 <!-- Change this version (and the ones below) on every update so browsers load the new
      files instead of a saved old copy; GitHub Pages lets browsers keep files for 10 minutes. -->
-<script>const ASSET_VERSION = '2026-10-22a';</script>
-<script src="assets/planner-math.js?v=2026-10-22a"></script>
-<script src="assets/budget-worksheet.js?v=2026-10-22a"></script>
-<script src="assets/screens.js?v=2026-10-22a"></script>
-<script src="assets/app.js?v=2026-10-22a"></script>
+<script>const ASSET_VERSION = '2026-10-22c';</script>
+<script src="assets/planner-math.js?v=2026-10-22c"></script>
+<script src="assets/budget-worksheet.js?v=2026-10-22c"></script>
+<script src="assets/screens.js?v=2026-10-22c"></script>
+<script src="assets/app.js?v=2026-10-22c"></script>
 </body>
 </html>

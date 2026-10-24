@@ -2,6 +2,8 @@
 
 Downloaded 2026-10-01. The original files are kept outside this repo (some are large). The website only uses smaller files built from them, like `data/forsyth_schools.json.gz` (made by `tools/build_school_zones.py`).
 
+**Used by the site:** the 2025 tax assessor parcel records (in `data/forsyth.json.gz`, from the model export) and the school zones and schools below (in `data/forsyth_schools.json.gz`). **Downloaded but not used yet:** the permits, the FHFA ZIP index and the OpenStreetMap places, so the site doesn't show them or their credits. Rates, taxes, insurance and program numbers aren't data files; they are in `planner-config.json` with their own sources.
+
 | File | What it is | Where it came from | Data date | Terms |
 |------|-----------|--------------------|-----------|-------|
 | `forsyth_school_zones.geojson` | Attendance zone shapes: 22 elementary, 11 middle, 7 high | Forsyth County GIS open data, "School Districts" layer: https://services2.arcgis.com/StQaZGYzUARPnrpL/arcgis/rest/services/School_Districts/FeatureServer/0 | Layer last edited 2026-03-27 | Forsyth County open data, free to use |

@@ -4,7 +4,7 @@ App name: Forsyth MarketMap. This builds on the earlier House Price Evaluation M
 
 ## 1. What the app is for
 
-A family enters what they earn and spend each month. The app shows which homes in Alpharetta and Forsyth County fit that budget without leaving them short, and what each home would really cost per month.
+A family enters what they earn and spend each month. The app shows which homes in Forsyth County fit that budget without leaving them short, and what each home would really cost per month.
 
 The question the app answers is "what can we afford comfortably?" It is not "what is the biggest loan we qualify for?"
 
@@ -12,7 +12,7 @@ It is a planning tool. It is not financial advice, an appraisal, or a loan offer
 
 ## 2. Who uses it
 
-- Families in or near north Fulton and Forsyth County thinking about buying a first or next home.
+- Families in or near Forsyth County thinking about buying a first or next home.
 - People who have already looked at listing sites and want to check whether a price is reasonable and whether they can carry it.
 
 ## 3. Design principles
@@ -70,11 +70,11 @@ In this order:
 
 ### 5.4 Compare
 
-Two or three homes side by side using the same rows as 5.3. Optional if time runs short.
+Two or three homes side by side using the same rows as 5.3. **Built:** “Add to compare” on a home, a Compare homes table on Detail, and a share link that holds parcel IDs only.
 
 ### 5.5 How this works
 
-One page: data sources, how the model was built, accuracy and where it is wrong, how the comfort label is calculated, and what the app cannot do. Keep the existing accuracy content.
+Data sources, how the model was built, accuracy and where it is wrong, how the comfort label is calculated, and what the app cannot do. **Built as small (i) panels next to the sections they explain**, not as its own page: the privacy notice (what's different, privacy, limits), Section B (comfort label and every rate behind the price), the Homes list (sources), the Detail estimate (model and accuracy) and “Can your family pay for it?” (sale-price step, cost math, every rate).
 
 ## 6. Calculations
 
@@ -97,13 +97,15 @@ The label is based on what is left after all monthly costs, not on a single rati
     left = take-home income - other bills and debts - total monthly housing cost
     buffer = left / take-home income
 
-Proposed labels (the cutoffs below are placeholders and need to be chosen and justified before launch):
+Labels (chosen October 24, 2026; the reason is stored with them in `planner-config.json` and shown in the app):
 
 | Label | Rule |
 |-------|------|
-| Comfortable | buffer at or above X% |
-| Tight | buffer between Y% and X% |
-| Stretching | buffer below Y% |
+| Comfortable | buffer at or above 20% |
+| Tight | buffer between 10% and 20% |
+| Stretching | buffer below 10% |
+
+These are this app's choice, not a lender rule. 20% left leaves room to save and absorb a surprise bill; under 10% means one repair or a short drop in pay could leave the family short.
 
 Also show the common guideline of keeping housing near 28% of gross income as a reference line, and say that it is a guideline, not a rule. Check the exact figures against a source such as HUD or CFPB before citing them.
 
@@ -114,7 +116,7 @@ The label should also answer: "What if income drops 10%?" using the same rule.
 The model predicts the county's assessed value. Buyers care about sale price, and the existing page says both the county and the model come in under recent sale prices.
 
 - Show a price range, not one number.
-- Adjust toward sale price using the sales-ratio results from the accuracy section. Only Alpharetta sales were tested, so for Forsyth, say plainly that the adjustment is less certain, or show only the county-based estimate.
+- Adjust toward sale price using the sales-ratio results from the accuracy section. Only Alpharetta sales were tested, so for Forsyth, say plainly that the adjustment is less certain, or show only the county-based estimate. **Built:** homes are judged at estimate ÷ 0.78 (the 2025 Alpharetta median), and the app says the ratio comes from Alpharetta.
 - Homes not in the Forsyth dataset (80,306 homes in the 2025 tax records; new construction and recent splits are missing) are not supported. Say so when an address is not found.
 - Listings are entered by the user (address plus asking price). Do not scrape listing sites.
 
@@ -125,6 +127,8 @@ The model predicts the county's assessed value. Buyers care about sale price, an
 - No account or login.
 
 ## 10. Verify before building (do not assume)
+
+Status October 24, 2026: verified and in `planner-config.json` with sources: Forsyth millage (2025), Georgia's 40% assessment, insurance and mortgage insurance, closing costs, the default rate (Freddie Mac, Oct 22, 2026) and Georgia Dream limits (DCA, July 8, 2026). Not verified: the homestead exemption and the Fulton/City of Cumming rates (see `NEEDS_OWNER.md`).
 
 - Property tax: millage rates for Forsyth and Fulton, and how assessed value turns into a tax bill in Georgia.
 - Homestead and other exemptions, and who qualifies.
@@ -144,7 +148,7 @@ The model predicts the county's assessed value. Buyers care about sale price, an
 | Oct 21-23 | Disclosure text, video, final testing on phone and desktop. |
 | Oct 24-25 | Submit. Do not wait until the last morning. |
 
-Cut order if time runs short: Compare first, then the what-if income drop.
+Cut order if time runs short: Compare first, then the what-if income drop. **Status October 24:** both are built. What is still open is listed in `NEEDS_OWNER.md` (homestead exemption, City of Cumming rate, Forsyth sale prices).
 
 ## 12. Submission notes (CAC)
 

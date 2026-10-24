@@ -276,6 +276,12 @@ input[type=range]:active::-webkit-slider-thumb { background: var(--ink); }
 .plain-list li + li { margin-top: 6px; }
 table.compare th, table.compare td { text-align: left; font-size: .875rem; vertical-align: top; }
 table.compare td:first-child { font-weight: 600; }
+@media (max-width: 600px) {
+  table.compare thead { display: none; }
+  table.compare tr { display: block; padding: 8px 0; border-bottom: 1px solid var(--rule); }
+  table.compare td { display: block; border: 0; padding: 2px 0; }
+  table.compare td[data-label]::before { content: attr(data-label) ": "; color: var(--ink-3); }
+}
 
 table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 th { font-weight: 500; font-size: .8125rem; color: var(--ink-2); text-align: right; padding: 0 0 8px 16px; border-bottom: 1px solid var(--ink); vertical-align: bottom; }
@@ -614,10 +620,10 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
       <table class="compare">
         <thead><tr><th scope="col">Question</th><th scope="col">A lender’s affordability check</th><th scope="col">A listing site’s estimate</th><th scope="col">This planner</th></tr></thead>
         <tbody>
-          <tr><td>Starts from</td><td>Pay before taxes and a debt ratio</td><td>The home, not your budget</td><td>Take-home pay minus your bills</td></tr>
-          <tr><td>Price shown as</td><td>A loan amount you might qualify for</td><td>Usually one number</td><td>An 80% range, plus a likely sale price</td></tr>
-          <tr><td>Explains the estimate</td><td>No</td><td>Varies</td><td>Yes, the four biggest reasons for each home</td></tr>
-          <tr><td>Your numbers</td><td>Sent to the lender</td><td>Not asked for</td><td>Stay in this browser tab; nothing is sent or saved</td></tr>
+          <tr><td>Starts from</td><td data-label="A lender’s check">Pay before taxes and a debt ratio</td><td data-label="A listing site">The home, not your budget</td><td data-label="This planner">Take-home pay minus your bills</td></tr>
+          <tr><td>Price shown as</td><td data-label="A lender’s check">A loan amount you might qualify for</td><td data-label="A listing site">Usually one number</td><td data-label="This planner">An 80% range, plus a likely sale price</td></tr>
+          <tr><td>Explains the estimate</td><td data-label="A lender’s check">No</td><td data-label="A listing site">Varies</td><td data-label="This planner">Yes, the four biggest reasons for each home</td></tr>
+          <tr><td>Your numbers</td><td data-label="A lender’s check">Sent to the lender</td><td data-label="A listing site">Not asked for</td><td data-label="This planner">Stay in this browser tab; nothing is sent or saved</td></tr>
         </tbody>
       </table>
       </div>

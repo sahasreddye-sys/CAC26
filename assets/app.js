@@ -878,13 +878,13 @@ window.addEventListener('budgetchange', () => { if (state.sel >= 0) renderAfford
 $('budgetPrint').addEventListener('click', () => window.print());
 
 /* ============================================================
-   How the numbers work (#/method)
+   The (i) panels: sources, accuracy and how each number is worked out
    ============================================================ */
-const tableHTML = (head, rows) => '<thead><tr>' + head.map(h => `<th>${h}</th>`).join('') + '</tr></thead><tbody>'
+const tableHTML = (head, rows) => '<thead><tr>' + head.map(h => `<th scope="col">${h}</th>`).join('') + '</tr></thead><tbody>'
   + rows.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('') + '</tbody>';
 const linkSources = src => esc(src).replace(/(https?:\/\/[^\s)]+?)([.,;:]?)(?=\s|$)/g, '<a href="$1" target="_blank" rel="noopener">source ↗</a>$2');
 
-// Every config number the cost math or the labels use, for the method page and the assumptions tables.
+// Every config number the cost math or the labels use, with its source and date.
 const ASSUMPTION_ROWS = [
   ['Interest rate (starting value)', 'loan.default_interest_rate', v => v + '%'],
   ['Loan length (starting value)', 'loan.default_term_years', v => v + ' years'],
@@ -902,7 +902,7 @@ const ASSUMPTION_ROWS = [
   ['Stretching cutoff', 'comfort.stretching_below_left_percent', v => 'under ' + v + '% left'],
 ];
 function assumptionsHTML(rows = ASSUMPTION_ROWS) {
-  return '<thead><tr><th>What</th><th>Value</th><th>Source</th><th>As of</th></tr></thead><tbody>' + rows.map(([name, path, fmt]) => {
+  return '<thead><tr><th scope="col">What</th><th scope="col">Value</th><th scope="col">Source</th><th scope="col">As of</th></tr></thead><tbody>' + rows.map(([name, path, fmt]) => {
     const e = plannerSetting(path);
     return e.value == null
       ? `<tr><td>${name}</td><td class="unset">not set yet</td><td class="src">${esc(e.note || 'Needs an official source.')}</td><td>—</td></tr>`
@@ -910,7 +910,7 @@ function assumptionsHTML(rows = ASSUMPTION_ROWS) {
   }).join('') + '</tbody>';
 }
 
-function renderMethod() {
+function renderInfoPanels() {
   const f = SUMMARY.final, pct = v => (v * 100).toFixed(0) + '%';
   $('mHomes').textContent = fmtInt(SUMMARY.homes);
   $('mSteps').innerHTML = tableHTML(['What the model could see', 'Median error', 'Within 10%'],
@@ -944,8 +944,9 @@ function renderMethod() {
     : `The label looks at what is left of take-home pay after every monthly bill, including the home. Comfortable: ${c1.value}% or more left. Tight: between ${c2.value}% and ${c1.value}%. Stretching: under ${c2.value}%.`;
   $('mComfortWhy').textContent = c1.reason || '';
   $('costSources').innerHTML = assumptionsHTML();
+  $('costSourcesBudget').innerHTML = assumptionsHTML();
 }
-renderMethod();
+renderInfoPanels();
 
 /* ============================================================
    Segmented controls

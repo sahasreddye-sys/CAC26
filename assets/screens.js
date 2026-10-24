@@ -8,7 +8,6 @@
 //   #/homes                       home lookup and map
 //   #/home/forsyth/<parcel id>    one home (the Detail tab)
 //   #/detail                      Detail tab with no home picked yet
-//   #/method                      how the numbers work (#/method/<section> jumps to a part)
 //
 // Links from the older site (#forsyth/<id>) still open the home.
 
@@ -17,14 +16,11 @@ function parseScreenRoute(hash) {
   let m = h.match(/^#\/homes?(?:\/(forsyth)(?:\/(.+))?)?$/) || h.match(/^#(forsyth)(?:\/(.+))?$/);
   if (m) return { screen: m[2] ? 'detail' : 'homes', market: m[1] || null, id: m[2] || null };
   if (h === '#/detail') return { screen: 'detail', market: null, id: null };
-  // #/how is the old address of this page
-  m = h.match(/^#\/(?:method|how)(?:\/([\w-]+))?$/);
-  if (m) return { screen: 'method', section: m[1] || null };
   return { screen: 'budget' };
 }
 
 const APP_NAME = 'Forsyth MarketMap';
-const SCREEN_TITLES = { budget: 'Budget', homes: 'Homes', detail: 'Home detail', method: 'How the numbers work' };
+const SCREEN_TITLES = { budget: 'Budget', homes: 'Homes', detail: 'Home detail' };
 
 function markScreenTabs(route) {
   const tab = route.screen;
@@ -50,4 +46,16 @@ window.addEventListener('hashchange', () => {
   const route = parseScreenRoute(location.hash);
   currentScreen = route.screen;
   showScreen(route);
+});
+
+// The small (i) buttons: each opens a short explanation of the section it sits in.
+// Every button that names a panel in aria-controls (the icon, or a text link) opens the same panel.
+document.addEventListener('click', e => {
+  const btn = e.target.closest('[aria-controls^="info-"]');
+  if (!btn) return;
+  const panel = document.getElementById(btn.getAttribute('aria-controls'));
+  const open = panel.hidden;
+  panel.hidden = !open;
+  document.querySelectorAll(`[aria-controls="${panel.id}"]`).forEach(b => b.setAttribute('aria-expanded', String(open)));
+  if (open && !btn.classList.contains('info-btn')) panel.scrollIntoView({ block: 'nearest' });
 });

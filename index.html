@@ -260,10 +260,19 @@ input[type=range]:active::-webkit-slider-thumb { background: var(--ink); }
 .report .side p { margin-top: 10px; font-size: .9375rem; color: var(--ink-2); }
 .report .side { position: sticky; top: 76px; align-self: start; }
 .report .main > * + * { margin-top: 44px; }
-.report .side h1 { font-size: 1.375rem; letter-spacing: -.01em; line-height: 1.25; }
-.report-h { font-size: 1.125rem; line-height: 1.3; margin-bottom: 12px; }
-.report-sub { font-size: .9375rem; margin: 24px 0 8px; }
-.plain-list { margin: 12px 0 0; padding-left: 18px; font-size: .9375rem; color: var(--ink-2); max-width: 72ch; }
+.info-btn { display: inline-grid; place-items: center; width: 24px; height: 24px; margin: -4px 0 -4px 2px; padding: 0; vertical-align: middle; border: 0; border-radius: 2px; background: none; color: var(--on-surface-variant); cursor: pointer; }
+.info-btn:hover, .info-btn[aria-expanded="true"] { color: var(--primary); background: var(--surface-container); }
+.info-pop { margin: 4px 0 8px; padding: 12px 14px; border: 1px solid var(--outline-variant); border-left: 3px solid var(--primary); border-radius: 2px; background: var(--surface-lowest); color: var(--on-surface); font-size: .875rem; line-height: 1.55; text-transform: none; letter-spacing: 0; font-weight: 400; }
+.info-pop[hidden] { display: none; }
+.info-part + .info-part { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--outline-variant); }
+.info-h { margin: 0 0 8px; font-size: .9375rem; font-weight: 600; }
+.info-sub { margin: 14px 0 6px; font-size: .875rem; font-weight: 600; }
+.info-pop .lead { font-size: .875rem; margin-bottom: 10px; }
+.info-pop .notes li { padding: 8px 0 8px 26px; font-size: .875rem; }
+.info-pop .notes li::before { top: 8px; }
+.info-pop table { font-size: .8125rem; }
+.info-pop td, .info-pop th { padding-top: 6px; padding-bottom: 6px; }
+.plain-list { margin: 8px 0 0; padding-left: 18px; color: var(--ink-2); max-width: 72ch; }
 .plain-list li + li { margin-top: 6px; }
 table.compare th, table.compare td { text-align: left; font-size: .875rem; vertical-align: top; }
 table.compare td:first-child { font-weight: 600; }
@@ -588,7 +597,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
         <div class="notice-main">
           <span class="ms fill">shield_lock</span>
           <div>
-            <p class="t-hsm">These numbers stay on this device</p>
+            <p class="t-hsm">These numbers stay on this device <button class="info-btn" type="button" aria-expanded="false" aria-controls="info-about" aria-label="About this planner and your privacy"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="6.3" r="1.05" fill="currentColor"/></svg></button></p>
             <p class="t-bsm">Nothing you type here is sent anywhere or saved. Refreshing or closing the page clears it.</p>
           </div>
         </div>
@@ -597,6 +606,37 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
       <p class="notice-step"><span class="ms">info</span><span>Step 1 of 3: start with what your family earns and spends, or <button class="linkish" type="button" id="tryExample">try an example family</button>.</span><span class="clear-note" id="clearNote" role="status"></span></p>
       <p class="example-note" id="exampleNote" hidden>These are made-up example numbers, not real data. Replace them with yours, or press Clear all.</p>
       <p class="example-note" id="configNotice" hidden>The planner’s starting numbers (rates, taxes, insurance) didn’t load, so some costs show “not set yet”. Refreshing the page may fix it.</p>
+      <div class="info-pop" id="info-about" hidden>
+        <div class="info-part" id="different">
+      <h4 class="info-h">What this does differently</h4>
+      <p class="lead">Most calculators start from a lender’s ratio of your pay before taxes. This one starts from what is left each month after your real bills. It also explains each home’s estimate, shows a range instead of one number, and runs entirely on your device.</p>
+      <div class="table-wrap">
+      <table class="compare">
+        <thead><tr><th scope="col">Question</th><th scope="col">A lender’s affordability check</th><th scope="col">A listing site’s estimate</th><th scope="col">This planner</th></tr></thead>
+        <tbody>
+          <tr><td>Starts from</td><td>Pay before taxes and a debt ratio</td><td>The home, not your budget</td><td>Take-home pay minus your bills</td></tr>
+          <tr><td>Price shown as</td><td>A loan amount you might qualify for</td><td>Usually one number</td><td>An 80% range, plus a likely sale price</td></tr>
+          <tr><td>Explains the estimate</td><td>No</td><td>Varies</td><td>Yes, the four biggest reasons for each home</td></tr>
+          <tr><td>Your numbers</td><td>Sent to the lender</td><td>Not asked for</td><td>Stay in this browser tab; nothing is sent or saved</td></tr>
+        </tbody>
+      </table>
+      </div>
+        </div>
+        <div class="info-part" id="privacy">
+      <h4 class="info-h">Privacy</h4>
+      <p class="lead" id="mPrivacy">Nothing you type is sent anywhere or saved. Refreshing or closing the page clears it. There are no accounts, cookies, or analytics.</p>
+        </div>
+        <div class="info-part" id="limits">
+      <h4 class="info-h">What it can’t do</h4>
+      <ul class="plain-list">
+        <li>It is a planning tool, not financial advice, a loan offer, or an appraisal.</li>
+        <li>It doesn’t know a home’s condition, updates, or whether it is for sale.</li>
+        <li>It can’t tell whether a home is inside the City of Cumming, which adds a city tax rate.</li>
+        <li>It can’t check whether you qualify for a loan or a program. Ask a lender or a <a href="https://www.consumerfinance.gov/find-a-housing-counselor/" rel="noopener">HUD-approved housing counselor</a>.</li>
+        <li>Shown values are rounded: home values to the nearest $1,000 in lists and ranges, monthly costs to the nearest $1. The math keeps full precision.</li>
+      </ul>
+        </div>
+      </div>
     </div>
 
     <section class="sheet" aria-labelledby="secA">
@@ -608,7 +648,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
         <div class="money-row primary-row" data-field="takeHome">
           <div class="money-label"><label for="b-takeHome">Take-home pay</label><span class="hint">After taxes and deductions</span></div>
           <div class="money-input">
-            <div class="amt"><span class="cur">$</span><input id="b-takeHome" name="takeHome" inputmode="decimal" aria-describedby="b-takeHome-err"><span class="per">/ mo</span></div>
+            <div class="amt"><span class="cur">$</span><input type="text" id="b-takeHome" name="takeHome" inputmode="decimal" aria-describedby="b-takeHome-err"><span class="per">/ mo</span></div>
             <div class="steppers"><button type="button" data-step="-100" data-for="b-takeHome" aria-label="Take-home pay minus $100"><span class="ms">remove</span></button><button type="button" data-step="100" data-for="b-takeHome" aria-label="Take-home pay plus $100"><span class="ms">add</span></button></div>
           </div>
           <p class="err" id="b-takeHome-err"></p>
@@ -616,7 +656,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
         <div class="money-row" data-field="debts">
           <div class="money-label"><label for="b-debts">Debt payments</label><span class="hint">Car, student, card mins</span></div>
           <div class="money-input">
-            <div class="amt"><span class="cur">$</span><input id="b-debts" name="debts" inputmode="decimal" aria-describedby="b-debts-err"><span class="per">/ mo</span></div>
+            <div class="amt"><span class="cur">$</span><input type="text" id="b-debts" name="debts" inputmode="decimal" aria-describedby="b-debts-err"><span class="per">/ mo</span></div>
             <div class="steppers"><button type="button" data-step="-50" data-for="b-debts" aria-label="Debt payments minus $50"><span class="ms">remove</span></button><button type="button" data-step="50" data-for="b-debts" aria-label="Debt payments plus $50"><span class="ms">add</span></button></div>
           </div>
           <p class="err" id="b-debts-err"></p>
@@ -624,7 +664,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
         <div class="money-row" data-field="otherCosts">
           <div class="money-label"><label for="b-otherCosts">Other regular costs</label><span class="hint">Childcare, food, utilities</span></div>
           <div class="money-input">
-            <div class="amt"><span class="cur">$</span><input id="b-otherCosts" name="otherCosts" inputmode="decimal" aria-describedby="b-otherCosts-err"><span class="per">/ mo</span></div>
+            <div class="amt"><span class="cur">$</span><input type="text" id="b-otherCosts" name="otherCosts" inputmode="decimal" aria-describedby="b-otherCosts-err"><span class="per">/ mo</span></div>
             <div class="steppers"><button type="button" data-step="-50" data-for="b-otherCosts" aria-label="Other regular costs minus $50"><span class="ms">remove</span></button><button type="button" data-step="50" data-for="b-otherCosts" aria-label="Other regular costs plus $50"><span class="ms">add</span></button></div>
           </div>
           <p class="err" id="b-otherCosts-err"></p>
@@ -632,7 +672,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
         <div class="money-row" data-field="savings">
           <div class="money-label"><label for="b-savings">Savings for buying</label><span class="hint">Down pmt &amp; closing</span></div>
           <div class="money-input">
-            <div class="amt"><span class="cur">$</span><input id="b-savings" name="savings" inputmode="decimal" aria-describedby="b-savings-err"><span class="per">total</span></div>
+            <div class="amt"><span class="cur">$</span><input type="text" id="b-savings" name="savings" inputmode="decimal" aria-describedby="b-savings-err"><span class="per">total</span></div>
             <div class="steppers"><button type="button" data-step="-2500" data-for="b-savings" aria-label="Savings for buying minus $2,500"><span class="ms">remove</span></button><button type="button" data-step="2500" data-for="b-savings" aria-label="Savings for buying plus $2,500"><span class="ms">add</span></button></div>
           </div>
           <p class="err" id="b-savings-err"></p>
@@ -642,7 +682,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
         <div class="money-row" data-field="grossMonthly">
           <div class="money-label"><label for="b-grossMonthly">Pay before taxes</label><span class="hint">For the guideline line</span></div>
           <div class="money-input">
-            <div class="amt"><span class="cur">$</span><input id="b-grossMonthly" name="grossMonthly" inputmode="decimal" aria-describedby="b-grossMonthly-err"><span class="per">/ mo</span></div>
+            <div class="amt"><span class="cur">$</span><input type="text" id="b-grossMonthly" name="grossMonthly" inputmode="decimal" aria-describedby="b-grossMonthly-err"><span class="per">/ mo</span></div>
             <div class="steppers"><button type="button" data-step="-100" data-for="b-grossMonthly" aria-label="Pay before taxes minus $100"><span class="ms">remove</span></button><button type="button" data-step="100" data-for="b-grossMonthly" aria-label="Pay before taxes plus $100"><span class="ms">add</span></button></div>
           </div>
           <p class="err" id="b-grossMonthly-err"></p>
@@ -650,7 +690,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
         <div class="money-row" data-field="monthlySaving">
           <div class="money-label"><label for="b-monthlySaving">Can save each month</label><span class="hint">For months to save</span></div>
           <div class="money-input">
-            <div class="amt"><span class="cur">$</span><input id="b-monthlySaving" name="monthlySaving" inputmode="decimal" aria-describedby="b-monthlySaving-err"><span class="per">/ mo</span></div>
+            <div class="amt"><span class="cur">$</span><input type="text" id="b-monthlySaving" name="monthlySaving" inputmode="decimal" aria-describedby="b-monthlySaving-err"><span class="per">/ mo</span></div>
             <div class="steppers"><button type="button" data-step="-50" data-for="b-monthlySaving" aria-label="Can save each month minus $50"><span class="ms">remove</span></button><button type="button" data-step="50" data-for="b-monthlySaving" aria-label="Can save each month plus $50"><span class="ms">add</span></button></div>
           </div>
           <p class="err" id="b-monthlySaving-err"></p>
@@ -660,8 +700,8 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
           <div class="loan-top">
             <span class="loan-label"><span class="ms">finance_mode</span>Loan terms</span>
             <span class="loan-fields">
-              <span class="mini" data-field="ratePercent"><input id="b-ratePercent" name="ratePercent" inputmode="decimal" aria-label="Interest rate, percent a year" aria-describedby="b-ratePercent-err b-ratePercent-src"><span>% a year</span></span>
-              <span class="mini" data-field="termYears"><input id="b-termYears" name="termYears" inputmode="numeric" aria-label="Loan length in years" aria-describedby="b-termYears-err b-termYears-src"><span>years</span></span>
+              <span class="mini" data-field="ratePercent"><input type="text" id="b-ratePercent" name="ratePercent" inputmode="decimal" aria-label="Interest rate, percent a year" aria-describedby="b-ratePercent-err b-ratePercent-src"><span>% a year</span></span>
+              <span class="mini" data-field="termYears"><input type="text" id="b-termYears" name="termYears" inputmode="numeric" aria-label="Loan length in years" aria-describedby="b-termYears-err b-termYears-src"><span>years</span></span>
             </span>
           </div>
           <p class="t-bsm src" id="b-ratePercent-src">Rate: loading…</p>
@@ -675,8 +715,19 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
     <div class="budget-side">
     <section class="sheet" aria-labelledby="secB">
       <div class="sheet-head">
-        <h2 id="secB" class="t-label"><span class="dot dot-b"></span>Section B · Where your pay goes</h2>
+        <h2 id="secB" class="t-label"><span class="dot dot-b"></span>Section B · Where your pay goes <button class="info-btn" type="button" aria-expanded="false" aria-controls="info-comfort" aria-label="How the comfort label and price are worked out"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="6.3" r="1.05" fill="currentColor"/></svg></button></h2>
         <span class="t-label cutoff" id="r-cutoffTag">Cutoff not set</span>
+      </div>
+      <div class="info-pop" id="info-comfort" hidden>
+        <div class="info-part" id="comfort">
+      <h4 class="info-h">How the comfort label works</h4>
+      <p class="lead" id="mComfort"></p>
+      <p class="lead" id="mComfortWhy"></p>
+        </div>
+        <div class="info-part">
+          <h4 class="info-h">Numbers behind the price you could carry</h4>
+          <div class="table-wrap"><table class="assumptions" id="costSourcesBudget"></table></div>
+        </div>
       </div>
       <div class="bar-top"><span>100% of monthly take-home pay</span><span class="num strong" id="r-takeHome">—</span></div>
       <div class="split-bar" id="splitBar" role="img" aria-label="Take-home pay split will show here">
@@ -721,20 +772,20 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
           <h2 class="t-label"><span class="dot"></span>Settings</h2>
           <button class="btn-clear" type="button" id="fReset">Reset</button>
         </div>
-        <label class="toggle-row" for="fFits">
+        <label class="toggle-row">
         <span><b>Only homes that fit my budget</b><small id="fFitsNote">Uses your budget and each home’s likely sale price</small></span>
         <input type="checkbox" class="switch" id="fFits">
       </label>
-      <label class="tight-row" for="fTight"><input type="checkbox" id="fTight"> Include homes that would be tight</label>
-      <label class="toggle-row" for="fNew">
+      <label class="tight-row"><input type="checkbox" id="fTight"> Include homes that would be tight</label>
+      <label class="toggle-row">
           <span><b>Only new homes</b><small>Built <span id="fNewYear">2023</span> or later</small></span>
           <input type="checkbox" class="switch" id="fNew">
         </label>
         <div class="fgrid">
-          <div class="fbox"><span class="t-label">Estimate</span><span class="pair"><input id="fPriceMin" inputmode="numeric" placeholder="Min $" aria-label="Lowest estimate in dollars"><span>to</span><input id="fPriceMax" inputmode="numeric" placeholder="Max $" aria-label="Highest estimate in dollars"></span></div>
-          <div class="fbox"><span class="t-label">Size (sq ft)</span><span class="pair"><input id="fSqftMin" inputmode="numeric" placeholder="Min" aria-label="Smallest size in square feet"><span>to</span><input id="fSqftMax" inputmode="numeric" placeholder="Max" aria-label="Largest size in square feet"></span></div>
-          <div class="fbox"><span class="t-label">Lot (acres)</span><input id="fLotMin" inputmode="decimal" placeholder="At least" aria-label="Smallest lot in acres"></div>
-          <div class="fbox"><span class="t-label">Built in or after</span><input id="fYearMin" inputmode="numeric" placeholder="Any year" aria-label="Built in or after this year"></div>
+          <div class="fbox"><span class="t-label">Estimate</span><span class="pair"><input type="text" id="fPriceMin" inputmode="numeric" placeholder="Min $" aria-label="Lowest estimate in dollars"><span>to</span><input type="text" id="fPriceMax" inputmode="numeric" placeholder="Max $" aria-label="Highest estimate in dollars"></span></div>
+          <div class="fbox"><span class="t-label">Size (sq ft)</span><span class="pair"><input type="text" id="fSqftMin" inputmode="numeric" placeholder="Min" aria-label="Smallest size in square feet"><span>to</span><input type="text" id="fSqftMax" inputmode="numeric" placeholder="Max" aria-label="Largest size in square feet"></span></div>
+          <div class="fbox"><span class="t-label">Lot (acres)</span><input type="text" id="fLotMin" inputmode="decimal" placeholder="At least" aria-label="Smallest lot in acres"></div>
+          <div class="fbox"><span class="t-label">Built in or after</span><input type="text" id="fYearMin" inputmode="numeric" placeholder="Any year" aria-label="Built in or after this year"></div>
           <div class="fbox" data-needs="beds"><span class="t-label">Bedrooms</span><select id="fBeds"><option value="">Any</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
           <div class="fbox" data-needs="baths"><span class="t-label">Full baths</span><select id="fBaths"><option value="">Any</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
         </div>
@@ -754,7 +805,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
 
     <figure class="mapfig">
       <div class="map" id="mapCard">
-        <canvas id="map" aria-label="Map of homes shaded by estimated value. Drag to pan, scroll to zoom, click a dot to open that home."></canvas>
+        <canvas id="map" role="img" aria-label="Map of homes shaded by estimated value. Drag to pan, scroll to zoom, click a dot to open that home."></canvas>
         <div class="loading" id="mapSkel">Loading map…</div>
         <div class="zoom">
           <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
@@ -773,8 +824,18 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
   <section class="wrap homes-list" aria-label="Find homes">
     <div class="sheet">
       <div class="sheet-head">
-        <h2 class="t-label"><span class="dot dot-b"></span>Homes</h2>
+        <h2 class="t-label"><span class="dot dot-b"></span>Homes <button class="info-btn" type="button" aria-expanded="false" aria-controls="info-homes" aria-label="Where the homes come from"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="6.3" r="1.05" fill="currentColor"/></svg></button></h2>
         <span class="tag num" id="listCount">—</span>
+      </div>
+      <div class="info-pop" id="info-homes" hidden>
+        <div class="info-part" id="sources">
+      <h4 class="info-h">Where the homes come from</h4>
+      <ol class="notes">
+        <li><b>Homes.</b> Forsyth County tax assessor parcel records, tax year 2025: <span id="mHomes">all</span> homes, each with its county value, size, age, lot and location. These are county records, not listings, so most homes are not for sale.</li>
+        <li><b>School zones.</b> Forsyth County GIS “School Districts” layer (last edited March 27, 2026). Zones can change, so check with the school district.</li>
+        <li><b>Not included.</b> Homes built or split after the 2025 tax roll aren’t in the data. Homes built in 2025 may have been valued while still being built.</li>
+      </ol>
+        </div>
       </div>
       <p class="t-bsm">From the <span id="listTaxYear">2025</span> county tax records. These are homes in the area, not listings, so most are not for sale. Brand-new homes may have been valued while still being built, so their estimates can come out too low.</p>
       <div class="sorts" id="listSort" role="group" aria-label="Sort homes">
@@ -812,14 +873,38 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
       </header>
 
       <section class="afford" aria-labelledby="affordTitle">
-        <h3 class="sec" id="affordTitle">Can your family pay for it? <button class="linkish no-print sec-act" type="button" id="affPrint">Print or save as PDF</button></h3>
+        <h3 class="sec" id="affordTitle">Can your family pay for it? <button class="info-btn" type="button" aria-expanded="false" aria-controls="info-costs" aria-label="How the price and monthly cost are worked out"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="6.3" r="1.05" fill="currentColor"/></svg></button> <button class="linkish no-print sec-act" type="button" id="affPrint">Print or save as PDF</button></h3>
+        <div class="info-pop" id="info-costs" hidden>
+        <div class="info-part" id="sale">
+      <h4 class="info-h">From county value to a likely sale price</h4>
+      <p class="lead" id="mSaleLead"></p>
+      <div class="table-wrap"><table id="mSales"></table></div>
+        </div>
+        <div class="info-part" id="costs">
+      <h4 class="info-h">How the monthly cost works</h4>
+      <ol class="notes">
+        <li><b>Price used.</b> Each home’s likely sale price (above), unless you type an asking price on the home.</li>
+        <li><b>Loan payment.</b> The standard fixed-rate formula: payment = P × r × (1 + r)<sup>n</sup> ÷ ((1 + r)<sup>n</sup> − 1), where P is the loan, r the monthly rate and n the number of monthly payments.</li>
+        <li><b>Property tax.</b> Georgia taxes 40% of a home’s value, times the local millage rate (dollars per $1,000 of assessed value), divided by 12.</li>
+        <li><b>Home insurance.</b> An average cost per $1,000 of value, unless you type in a real quote.</li>
+        <li><b>Mortgage insurance.</b> Only when the down payment is under 20% of the price.</li>
+        <li><b>HOA dues.</b> Only if you type them in on a home.</li>
+        <li><b>Down payment.</b> Your savings minus closing costs, the way the CFPB suggests working it out, but never under the minimum down payment.</li>
+      </ol>
+        </div>
+        <div class="info-part" id="assumptions">
+      <h4 class="info-h">Every rate and fee, with its source</h4>
+      <p class="lead">These live in <code>planner-config.json</code>. “Not set yet” means no official source has been confirmed, so the planner leaves it out instead of guessing.</p>
+      <div class="table-wrap"><table class="assumptions" id="costSources"></table></div>
+        </div>
+        </div>
         <p class="aff-need" id="affNeedBudget" hidden>Fill in your <a href="#/budget">budget</a> first. Then this shows what the home would leave you each month.</p>
         <div class="afford-grid">
           <div>
             <div class="aff-inputs">
-              <label class="aff-field"><span>Price to check</span><span class="aff-box">$<input id="affPrice" inputmode="numeric" autocomplete="off"></span><small id="affPriceNote"></small></label>
-              <label class="aff-field"><span>Down payment</span><span class="aff-box">$<input id="affDown" inputmode="numeric" autocomplete="off"></span><small id="affDownNote"></small></label>
-              <label class="aff-field"><span>Insurance quote <em>(optional)</em></span><span class="aff-box">$<input id="affIns" inputmode="numeric" autocomplete="off" placeholder="per year"></span><small id="affInsNote"></small></label>
+              <label class="aff-field"><span>Price to check</span><span class="aff-box">$<input type="text" id="affPrice" inputmode="numeric" autocomplete="off"></span><small id="affPriceNote"></small></label>
+              <label class="aff-field"><span>Down payment</span><span class="aff-box">$<input type="text" id="affDown" inputmode="numeric" autocomplete="off"></span><small id="affDownNote"></small></label>
+              <label class="aff-field"><span>Insurance quote <em>(optional)</em></span><span class="aff-box">$<input type="text" id="affIns" inputmode="numeric" autocomplete="off" placeholder="per year"></span><small id="affInsNote"></small></label>
             </div>
             <p class="aff-check" id="affPriceCheck"></p>
             <table class="aff-table" id="affTable"></table>
@@ -832,7 +917,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
             <dl class="ledger" id="affCash"></dl>
             <h4 class="aff-h">What if</h4>
             <div class="sl"><label for="affRate">Interest rate</label><input type="range" id="affRate" min="3" max="10" step="0.01"><output id="affRateOut" for="affRate"></output></div>
-            <label class="toggle-row aff-toggle" for="affDrop"><span><b>Income drops <span id="affDropPct">10</span>%</b><small id="affDropNote">Same costs, less take-home pay</small></span><input type="checkbox" class="switch" id="affDrop"></label>
+            <label class="toggle-row aff-toggle"><span><b>Income drops <span id="affDropPct">10</span>%</b><small id="affDropNote">Same costs, less take-home pay</small></span><input type="checkbox" class="switch" id="affDrop"></label>
             <p class="fine" id="affWhatIfNote"></p>
             <p class="fine no-print"><a id="affSearch" href="#" target="_blank" rel="noopener">Look this address up online ↗</a> to see if it's listed for sale.</p>
           </div>
@@ -842,7 +927,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
       <div class="rec-body">
         <div>
           <div class="val">
-            <p class="label">Model estimate</p>
+            <p class="label">Model estimate <button class="info-btn" type="button" aria-expanded="false" aria-controls="info-estimate" aria-label="How the estimate is built and how accurate it is"><svg viewBox="0 0 20 20" width="16" height="16" aria-hidden="true" focusable="false"><circle cx="10" cy="10" r="8.25" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M10 9v5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="10" cy="6.3" r="1.05" fill="currentColor"/></svg></button></p>
             <p class="est num"><mark id="rEst">—</mark></p>
             <p class="range num" id="rRange"></p>
             <p class="adj num" id="rAdj"></p>
@@ -854,7 +939,22 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
             <div class="mark cv" id="rvCv"><span></span></div>
             <div class="mark est" id="rvEst"><span></span></div>
           </div>
-          <p class="scale-note">The shaded span is the 80% range. <a href="#/method/accuracy">How accurate is this?</a></p>
+          <p class="scale-note">The shaded span is the 80% range. <button class="linkish" type="button" aria-expanded="false" aria-controls="info-estimate">How accurate is this?</button></p>
+          <div class="info-pop" id="info-estimate" hidden>
+        <div class="info-part" id="model">
+      <h4 class="info-h">How the estimate is built</h4>
+      <p class="lead">A LightGBM model (600 decision trees) learned the county’s value from each home’s size, age, floors, lot, use type, neighborhood, tax class, zoning, construction grade, structure type and location. It was checked with 5-fold cross-validation: each home is scored by a model that never saw it. The same trees run in your browser, which is how the “What pushed the estimate” bars and the what-if sliders work.</p>
+      <div class="table-wrap"><table id="mSteps"></table></div>
+        </div>
+        <div class="info-part" id="accuracy">
+      <h4 class="info-h">How accurate it is</h4>
+      <p class="lead">The model predicts the <b>county’s assessed value</b>, so these numbers measure how close it gets to that value. They are not comparable to listing sites’ accuracy numbers, which measure sale prices.</p>
+      <div class="table-wrap"><table id="mAccuracy"></table></div>
+      <h5 class="info-sub">Where it is less reliable</h5>
+      <div class="table-wrap"><table id="mTiers"></table></div>
+      <ul class="plain-list" id="mWeak"></ul>
+        </div>
+          </div>
           <p class="sr" id="rangeText"></p>
 
           <h3 class="sec">What pushed the estimate <small>vs. the average home here</small></h3>
@@ -878,105 +978,6 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
   </section>
   </div>
 
-  <div data-screen="method" hidden>
-  <section class="report" aria-labelledby="methodTitle">
-    <div class="wrap">
-      <div class="side">
-        <h1 id="methodTitle">How the numbers work</h1>
-        <p>Where every number on this site comes from, how good the estimates are, and what the planner can’t do.</p>
-      </div>
-      <div class="main">
-        <div id="different">
-          <h2 class="report-h">What this does differently</h2>
-          <p class="lead">Most calculators start from a lender’s ratio of your pay before taxes. This one starts from what is left each month after your real bills. It also explains each home’s estimate, shows a range instead of one number, and runs entirely on your device.</p>
-          <div class="table-wrap">
-          <table class="compare">
-            <thead><tr><th>Question</th><th>A lender’s affordability check</th><th>A listing site’s estimate</th><th>This planner</th></tr></thead>
-            <tbody>
-              <tr><td>Starts from</td><td>Pay before taxes and a debt ratio</td><td>The home, not your budget</td><td>Take-home pay minus your bills</td></tr>
-              <tr><td>Price shown as</td><td>A loan amount you might qualify for</td><td>Usually one number</td><td>An 80% range, plus a likely sale price</td></tr>
-              <tr><td>Explains the estimate</td><td>No</td><td>Varies</td><td>Yes, the four biggest reasons for each home</td></tr>
-              <tr><td>Your numbers</td><td>Sent to the lender</td><td>Not asked for</td><td>Stay in this browser tab; nothing is sent or saved</td></tr>
-            </tbody>
-          </table>
-          </div>
-        </div>
-
-        <div id="sources">
-          <h2 class="report-h">Where the homes come from</h2>
-          <ol class="notes">
-            <li><b>Homes.</b> Forsyth County tax assessor parcel records, tax year 2025: <span id="mHomes">all</span> homes, each with its county value, size, age, lot and location. These are county records, not listings, so most homes are not for sale.</li>
-            <li><b>School zones.</b> Forsyth County GIS “School Districts” layer (last edited March 27, 2026). Zones can change, so check with the school district.</li>
-            <li><b>Not included.</b> Homes built or split after the 2025 tax roll aren’t in the data. Homes built in 2025 may have been valued while still being built.</li>
-          </ol>
-        </div>
-
-        <div id="model">
-          <h2 class="report-h">How the estimate is built</h2>
-          <p class="lead">A LightGBM model (600 decision trees) learned the county’s value from each home’s size, age, floors, lot, use type, neighborhood, tax class, zoning, construction grade, structure type and location. It was checked with 5-fold cross-validation: each home is scored by a model that never saw it. The same trees run in your browser, which is how the “What pushed the estimate” bars and the what-if sliders work.</p>
-          <div class="table-wrap"><table id="mSteps"></table></div>
-        </div>
-
-        <div id="accuracy">
-          <h2 class="report-h">How accurate it is</h2>
-          <p class="lead">The model predicts the <b>county’s assessed value</b>, so these numbers measure how close it gets to that value. They are not comparable to listing sites’ accuracy numbers, which measure sale prices.</p>
-          <div class="table-wrap"><table id="mAccuracy"></table></div>
-          <h3 class="report-sub">Where it is less reliable</h3>
-          <div class="table-wrap"><table id="mTiers"></table></div>
-          <ul class="plain-list" id="mWeak"></ul>
-        </div>
-
-        <div id="sale">
-          <h2 class="report-h">From county value to a likely sale price</h2>
-          <p class="lead" id="mSaleLead"></p>
-          <div class="table-wrap"><table id="mSales"></table></div>
-        </div>
-
-        <div id="costs">
-          <h2 class="report-h">How the monthly cost works</h2>
-          <ol class="notes">
-            <li><b>Price used.</b> Each home’s likely sale price (above), unless you type an asking price on the home.</li>
-            <li><b>Loan payment.</b> The standard fixed-rate formula: payment = P × r × (1 + r)<sup>n</sup> ÷ ((1 + r)<sup>n</sup> − 1), where P is the loan, r the monthly rate and n the number of monthly payments.</li>
-            <li><b>Property tax.</b> Georgia taxes 40% of a home’s value, times the local millage rate (dollars per $1,000 of assessed value), divided by 12.</li>
-            <li><b>Home insurance.</b> An average cost per $1,000 of value, unless you type in a real quote.</li>
-            <li><b>Mortgage insurance.</b> Only when the down payment is under 20% of the price.</li>
-            <li><b>HOA dues.</b> Only if you type them in on a home.</li>
-            <li><b>Down payment.</b> Your savings minus closing costs, the way the CFPB suggests working it out, but never under the minimum down payment.</li>
-          </ol>
-        </div>
-
-        <div id="comfort">
-          <h2 class="report-h">How the comfort label works</h2>
-          <p class="lead" id="mComfort"></p>
-          <p class="lead" id="mComfortWhy"></p>
-        </div>
-
-        <div id="assumptions">
-          <h2 class="report-h">Every rate and fee, with its source</h2>
-          <p class="lead">These live in <code>planner-config.json</code>. “Not set yet” means no official source has been confirmed, so the planner leaves it out instead of guessing.</p>
-          <div class="table-wrap"><table class="assumptions" id="costSources"></table></div>
-        </div>
-
-        <div id="limits">
-          <h2 class="report-h">What it can’t do</h2>
-          <ul class="plain-list">
-            <li>It is a planning tool, not financial advice, a loan offer, or an appraisal.</li>
-            <li>It doesn’t know a home’s condition, updates, or whether it is for sale.</li>
-            <li>It can’t tell whether a home is inside the City of Cumming, which adds a city tax rate.</li>
-            <li>It can’t check whether you qualify for a loan or a program. Ask a lender or a <a href="https://www.consumerfinance.gov/find-a-housing-counselor/" rel="noopener">HUD-approved housing counselor</a>.</li>
-            <li>Shown values are rounded: home values to the nearest $1,000 in lists and ranges, monthly costs to the nearest $1. The math keeps full precision.</li>
-          </ul>
-        </div>
-
-        <div id="privacy">
-          <h2 class="report-h">Privacy</h2>
-          <p class="lead" id="mPrivacy">Nothing you type is sent anywhere or saved. Refreshing or closing the page clears it. There are no accounts, cookies, or analytics.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-  </div>
-
 </main>
 
 <footer class="app-foot">
@@ -984,7 +985,7 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
     <img class="foot-logo" src="assets/logo.png" alt="Sahas Reddy Etikyala" width="96" height="40">
     <div>
       <p>Data: Forsyth County tax assessor parcel records, tax year 2025. A LightGBM model, 600 trees, trained on log county value with 5-fold cross-validation. Estimates follow assessed value, not market price, and are not an appraisal.</p>
-      <p><a href="#/method">How the numbers work</a> · <a href="https://github.com/sahasreddye-sys/CAC26" rel="noopener">Code and notebook on GitHub</a></p>
+      <p><a href="https://github.com/sahasreddye-sys/CAC26" rel="noopener">Code and notebook on GitHub</a></p>
       <p class="aside">The interface was built with help from AI coding tools. The model behind it, from the data cleaning to the validation, is my own original work.</p>
     </div>
   </div>
@@ -996,16 +997,15 @@ footer .aside { color: var(--ink-3); font-size: .8125rem; margin-top: 18px; }
     <a href="#/budget" data-screen-link="budget"><span class="ms">account_balance_wallet</span><span>1. Budget</span></a>
     <a href="#/homes" data-screen-link="homes"><span class="ms">holiday_village</span><span>2. Homes</span></a>
     <a href="#/detail" data-screen-link="detail" id="tabDetail"><span class="ms">analytics</span><span>3. Detail</span></a>
-    <a href="#/method" data-screen-link="method"><span class="ms">rule</span><span>Method</span></a>
   </nav>
 </div>
 
 <!-- python tools/build.py writes these version numbers; don't edit them by hand. -->
-<script>const ASSET_VERSION = '6de0af5b34';</script>
-<script src="assets/site-data.js?v=6de0af5b34"></script>
-<script src="assets/planner-math.js?v=6de0af5b34"></script>
-<script src="assets/budget-worksheet.js?v=6de0af5b34"></script>
-<script src="assets/screens.js?v=6de0af5b34"></script>
-<script src="assets/app.js?v=6de0af5b34"></script>
+<script>const ASSET_VERSION = '13874b457d';</script>
+<script src="assets/site-data.js?v=13874b457d"></script>
+<script src="assets/planner-math.js?v=13874b457d"></script>
+<script src="assets/budget-worksheet.js?v=13874b457d"></script>
+<script src="assets/screens.js?v=13874b457d"></script>
+<script src="assets/app.js?v=13874b457d"></script>
 </body>
 </html>

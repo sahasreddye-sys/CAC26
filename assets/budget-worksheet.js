@@ -73,15 +73,17 @@ function budgetIsFilledIn() { return familyBudget.takeHome != null; }
 // Other screens listen for this to redraw when the budget or config changes.
 function announceBudgetChange() { window.dispatchEvent(new Event('budgetchange')); }
 
+// Upper limits catch an extra zero, not real families.
+const MONTHLY_MAX = { max: 200000, message: 'That is more than $200,000 a month. Check for an extra zero.' };
 const BUDGET_FIELDS = {
-  takeHome: {},
-  debts: {},
-  otherCosts: {},
-  savings: {},
+  takeHome: MONTHLY_MAX,
+  debts: MONTHLY_MAX,
+  otherCosts: MONTHLY_MAX,
+  savings: { max: 20000000, message: 'That is more than $20 million. Check for an extra zero.' },
   ratePercent: { max: 100, message: 'Rate: enter a yearly rate under 100%, like 6.5' },
   termYears: { wholeNumber: true, min: 1, max: 50, message: 'Length: enter whole years from 1 to 50' },
-  grossMonthly: {},
-  monthlySaving: {},
+  grossMonthly: MONTHLY_MAX,
+  monthlySaving: MONTHLY_MAX,
 };
 
 (function budgetWorksheet() {
@@ -143,6 +145,9 @@ const BUDGET_FIELDS = {
       setText('r-comfortLimit', '—');
       byId('r-comfortNote').textContent = keepPercent == null ? 'Needs a comfort cutoff' : waitText;
       byId('r-narrativeWrap').hidden = true;
+      byId('r-headline').textContent = linesOk
+        ? 'Fill in take-home pay, debts and other costs to see what you could spend on housing.'
+        : 'Fix the marked box to see what you could spend on housing.';
       renderSplit(null);
       renderMaxPrice(null);
       announceBudgetChange();
@@ -173,7 +178,10 @@ const BUDGET_FIELDS = {
     }
     byId('r-narrativeWrap').hidden = false;
     renderSplit(b.takeHome, Math.min(costs, b.takeHome), left > 0 ? limit : 0);
-    renderMaxPrice(left > 0 ? limit : 0);
+    const price = renderMaxPrice(left > 0 ? limit : 0);
+    byId('r-headline').innerHTML = left <= 0 || limit == null || limit === 0
+      ? (limit == null ? `You have <b>${money(Math.max(0, left))}</b> a month left before housing.` : 'With these numbers there is no room for a housing payment yet.')
+      : `You could comfortably spend up to <b>${money(limit)}</b> a month on housing` + (price ? `, which points to a home around <b>${money(price)}</b>.` : '.');
     clearTimeout(render.say);
     render.say = setTimeout(() => {
       byId('budgetAnnounce').textContent = `Housing that leaves you comfortable: ${byId('r-comfortLimit').textContent}. Price you could carry: ${byId('r-maxPrice').textContent}.`;
@@ -188,23 +196,24 @@ const BUDGET_FIELDS = {
     const s = homeCostSettings('forsyth');
     const note = byId('r-maxPriceNote');
     const show = (price, text) => { setText('r-maxPrice', price); note.textContent = text; };
-    if (limit == null) return show('—', 'Needs take-home pay and a comfort cutoff');
-    if (s.ratePercent == null || s.termYears == null) return show('—', 'Needs an interest rate and loan length');
+    if (limit == null) return show('—', 'Needs take-home pay and a comfort cutoff'), null;
+    if (s.ratePercent == null || s.termYears == null) return show('—', 'Needs an interest rate and loan length'), null;
     const byMonthly = PlannerMath.maxPriceForMonthly(limit, price => familyHomeCost('forsyth', price).total);
     const byCash = PlannerMath.maxPriceForCash(familyBudget.savings, s.closingPercent, s.minDownPercent);
-    if (byMonthly == null || byCash == null) return show('—', 'A cost source is still missing in planner-config.json');
+    if (byMonthly == null || byCash == null) return show('—', 'A cost source is still missing in planner-config.json'), null;
     const blanks = familyBudget.debts == null && familyBudget.otherCosts == null
       ? ' Debts and other costs are blank, so they count as $0.' : '';
     if (byCash === 0) {
-      return show('$0', `Buying needs cash up front: closing costs (about ${s.closingPercent}%) plus at least ${s.minDownPercent}% down. Add your savings above.` + blanks);
+      return show('$0', `Buying needs cash up front: closing costs (about ${s.closingPercent}%) plus at least ${s.minDownPercent}% down. Add your savings above.` + blanks), null;
     }
-    if (byMonthly === 0) return show('$0', 'No room for a housing payment with these numbers.' + blanks);
+    if (byMonthly === 0) return show('$0', 'No room for a housing payment with these numbers.' + blanks), null;
     const price = Math.min(byMonthly, byCash);
     const down = PlannerMath.downPaymentFromSavings(familyBudget.savings, price, s.closingPercent);
     const terms = `${money(down)} down (${(down / price * 100).toFixed(1)}%) after closing costs, ${s.ratePercent}% for ${s.termYears} years`;
     show('about ' + money(price), byCash < byMonthly
       ? `Held back by savings: closing costs plus at least ${s.minDownPercent}% down. The monthly budget alone would allow about ${money(byMonthly)}. ${terms}.` + blanks
       : `Held back by the monthly budget. ${terms}, Forsyth taxes and insurance.` + blanks);
+    return price;
   }
 
   function setText(id, text) { byId(id).textContent = text; }
@@ -255,15 +264,37 @@ const BUDGET_FIELDS = {
     if (Number.isFinite(value)) e.target.value = withCommas(value);
   });
 
-  // The +/- buttons next to each money box.
-  form.addEventListener('click', e => {
-    const btn = e.target.closest('button[data-step]');
-    if (!btn) return;
+  // The +/- buttons next to each money box. Holding one down keeps stepping.
+  function step(btn) {
     const input = byId(btn.dataset.for);
     const current = PlannerMath.parseAmount(input.value);
     const base = Number.isFinite(current) ? current : 0;
     input.value = withCommas(Math.max(0, base + Number(btn.dataset.step)));
     render();
+  }
+  let holdTimer = 0;
+  const stopHold = () => clearTimeout(holdTimer);
+  form.addEventListener('pointerdown', e => {
+    const btn = e.target.closest('button[data-step]');
+    if (!btn || e.button > 0) return;
+    e.preventDefault();
+    step(btn);
+    holdTimer = setTimeout(function again() { step(btn); holdTimer = setTimeout(again, 80); }, 450);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(t => form.addEventListener(t, stopHold));
+  // keyboard presses (Enter or Space on the button) arrive as clicks with detail 0
+  form.addEventListener('click', e => {
+    const btn = e.target.closest('button[data-step]');
+    if (btn && e.detail === 0) step(btn);
+  });
+
+  // Enter moves to the next box instead of doing nothing
+  form.addEventListener('keydown', e => {
+    if (e.key !== 'Enter' || e.target.tagName !== 'INPUT') return;
+    e.preventDefault();
+    const boxes = [...form.querySelectorAll('input')];
+    const next = boxes[boxes.indexOf(e.target) + 1];
+    if (next) next.focus(); else e.target.blur();
   });
 
   function clearBudget() {

@@ -89,7 +89,6 @@ function fmtShort(v) {
   return '$' + Math.round(v / 1e3) + 'k';
 }
 function fmtPct(v, d = 1) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d) + '%'; }
-function round100(v) { return Math.round(v / 100) * 100; }
 function round1000(v) { return Math.round(v / 1000) * 1000; }
 // one short sentence for screen readers, sent after typing pauses
 function announce(id, text) { clearTimeout(announce[id]); announce[id] = setTimeout(() => { $(id).textContent = text; }, 700); }
@@ -147,10 +146,25 @@ const state = {
 const cur = () => state.data[state.market];
 
 /* ---------------- data loading ---------------- */
-async function fetchJSON(url) {
+// onProgress(fraction) is called while the file downloads, when the size is known
+async function fetchText(url, onProgress) {
   const res = await fetch(url);
   if (!res.ok) throw new Error(res.status + ' ' + url);
-  const buf = new Uint8Array(await res.arrayBuffer());
+  const total = +res.headers.get('content-length');
+  let buf;
+  if (onProgress && total && res.body) {
+    const reader = res.body.getReader(), chunks = [];
+    let got = 0;
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      chunks.push(value); got += value.length;
+      onProgress(Math.min(1, got / total));
+    }
+    buf = new Uint8Array(got);
+    let at = 0;
+    for (const c of chunks) { buf.set(c, at); at += c.length; }
+  } else buf = new Uint8Array(await res.arrayBuffer());
   let text;
   if (buf[0] === 0x1f && buf[1] === 0x8b) {
     const stream = new Blob([buf]).stream().pipeThrough(new DecompressionStream('gzip'));
@@ -158,7 +172,7 @@ async function fetchJSON(url) {
   } else {
     text = new TextDecoder().decode(buf);
   }
-  return JSON.parse(text);
+  return text;
 }
 
 function prepare(market, raw) {
@@ -220,13 +234,26 @@ function prepare(market, raw) {
   return d;
 }
 
+// Downloading only moves bytes; reading them (JSON.parse and prepare) is the slow part
+// on a phone, so it waits until a screen that needs the homes opens.
+const downloads = {};
+function downloadMarket(market) {
+  if (!downloads[market]) {
+    const homes = fetchText(`data/${market}.json.gz`, f => {
+      const msg = `Loading ${fmtInt(NB[market].n)} ${NB[market].name} homes… ${Math.round(f * 100)}%`;
+      setStatus(msg); if (map.ctx) $('mapSkel').textContent = msg;
+    });
+    const schools = market === 'forsyth' ? fetchText('data/forsyth_schools.json.gz').catch(() => null) : Promise.resolve(null);
+    downloads[market] = Promise.all([homes, schools]);
+    downloads[market].catch(() => { delete downloads[market]; }); // let Try again download it again
+  }
+  return downloads[market];
+}
 function loadMarket(market) {
   if (state.data[market]) return Promise.resolve(state.data[market]);
-  const homes = fetchJSON(`data/${market}.json.gz`);
-  const schools = market === 'forsyth' ? fetchJSON('data/forsyth_schools.json.gz').catch(() => null) : Promise.resolve(null);
-  return Promise.all([homes, schools]).then(([raw, sch]) => {
-    const d = prepare(market, raw);
-    d.schools = sch;
+  return downloadMarket(market).then(([homesText, schoolsText]) => {
+    const d = prepare(market, JSON.parse(homesText));
+    d.schools = schoolsText ? JSON.parse(schoolsText) : null;
     return (state.data[market] = d);
   });
 }
@@ -421,6 +448,19 @@ function showTip(i, sx, sy) {
   $('zoomIn').onclick = () => map.springs.s.set(Math.min(map.fit * 400, map.springs.s.target * 2));
   $('zoomOut').onclick = () => map.springs.s.set(Math.max(map.fit * 0.6, map.springs.s.target / 2));
   $('zoomReset').onclick = () => resetCam(true);
+  c.addEventListener('keydown', e => {
+    if (!cur()) return;
+    const pan = 80 / map.cam.s;
+    const moves = { ArrowLeft: [-pan, 0], ArrowRight: [pan, 0], ArrowUp: [0, -pan], ArrowDown: [0, pan] };
+    if (moves[e.key]) {
+      map.springs.x.set(map.springs.x.target + moves[e.key][0]);
+      map.springs.y.set(map.springs.y.target + moves[e.key][1]);
+    } else if (e.key === '+' || e.key === '=') $('zoomIn').onclick();
+    else if (e.key === '-' || e.key === '_') $('zoomOut').onclick();
+    else if (e.key === '0') resetCam(true);
+    else return;
+    e.preventDefault();
+  });
   new ResizeObserver(() => sizeMap()).observe(map.canvas);
 })();
 
@@ -509,7 +549,7 @@ $('tryRow').addEventListener('click', e => { const b = e.target.closest('button[
 /* ============================================================
    Home detail
    ============================================================ */
-const estSpring = new Spring(0, v => { $('rEst').textContent = fmtUSD(round100(v)); }, 0.3);
+const estSpring = new Spring(0, v => { $('rEst').textContent = fmtUSD(round1000(v)); }, 0.3);
 
 function selectHome(i, opts = {}) {
   const d = cur();
@@ -569,11 +609,11 @@ function updateEstimate(initial) {
   const orig = H.est[i];
   const est = orig * Math.exp(Model.predictLog(d.model, state.vec) - state.base);
   state.est = est;
-  const lo = round100(est * d.lowMul), hi = round100(est * d.highMul);
+  const lo = round1000(est * d.lowMul), hi = round1000(est * d.highMul);
   if (!initial) estSpring.set(est);
   $('rRange').textContent = `80% likely between ${fmtUSD(lo)} and ${fmtUSD(hi)}`;
   const delta = est - orig;
-  $('rAdj').textContent = Math.abs(delta) < 50 ? '' : `${delta > 0 ? 'Up' : 'Down'} ${fmtUSD(round100(Math.abs(delta)))} (${fmtPct(delta / orig * 100)}) from ${fmtUSD(orig)} with your changes`;
+  $('rAdj').textContent = Math.abs(delta) < 500 ? '' : `${delta > 0 ? 'Up' : 'Down'} ${fmtUSD(round1000(Math.abs(delta)))} (${fmtPct(delta / orig * 100)}) from ${fmtUSD(round1000(orig))} with your changes`;
   $('rReset').hidden = Math.abs(delta) < 1 && state.vec.every((v, k) => v === state.orig[k]);
 
   // range visual
@@ -689,7 +729,7 @@ function renderNearby() {
     const mi = Math.sqrt(dd) * 69;
     const dist = mi < 0.1 ? Math.round(mi * 5280 / 10) * 10 + ' ft' : mi.toFixed(1) + ' mi';
     const sq = d.H.sqft[j] ? ' · ' + fmtInt(d.H.sqft[j]) + ' sq ft' : '';
-    return `<li><button type="button" data-i="${j}"><span class="a">${esc(d.H.addr[j])}</span><span class="v num">${fmtUSD(d.H.est[j])}</span><small>${dist}${sq}</small><small class="num r">county ${fmtShort(d.H.cv[j])}</small></button></li>`;
+    return `<li><button type="button" data-i="${j}"><span class="a">${esc(d.H.addr[j])}</span><span class="v num">${fmtUSD(round1000(d.H.est[j]))}</span><small>${dist}${sq}</small><small class="num r">county ${fmtShort(d.H.cv[j])}</small></button></li>`;
   }).join('');
 }
 $('rNearby').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) selectHome(+b.dataset.i, { from: 'nearby', scroll: false }); });
@@ -713,7 +753,7 @@ function resetAfford() {
   const d = cur(), i = state.sel;
   if (i < 0) return;
   aff.downTyped = false; aff.rateMoved = false;
-  $('affPrice').value = fmtInt(round100(startingPrice(d, i)));
+  $('affPrice').value = fmtInt(round1000(startingPrice(d, i)));
   $('affDown').value = '';
   $('affIns').value = '';
   $('affDrop').checked = false;
@@ -754,6 +794,7 @@ function renderAfford() {
 
   if (price == null || price === undefined) {
     $('affTable').innerHTML = ''; $('affVerdict').textContent = 'Type a price to check.'; $('affPriceCheck').textContent = '';
+    renderSummary(null);
     return;
   }
   renderPriceCheck(d, i, price);
@@ -826,12 +867,26 @@ function renderCash(price, down, s) {
 
 const leftWords = left => left >= 0 ? `${fmtUSD(left)} left` : `${fmtUSD(-left)} short each month`;
 
+// The short answer shown next to the address and, on phones, pinned above the what-if controls.
+function renderSummary(cost, v, dropped) {
+  const price = readMoneyBox('affPrice');
+  let html = '';
+  if (cost && cost.total != null) {
+    html = `About <b>${fmtUSD(cost.total)}</b> a month at ${fmtShort(price)}`;
+    if (v && v.label) html += ` · <b class="${v.label}">${v.label}</b>, ${esc(leftWords(v.left))}${dropped ? ' after the income drop' : ''}`;
+    else if (!budgetIsFilledIn()) html += ' · fill in your budget to see if it fits';
+  }
+  $('rSummary').innerHTML = html;
+  $('affSticky').innerHTML = html;
+}
+
 function renderVerdict(cost) {
   const ready = budgetIsFilledIn();
   $('affNeedBudget').hidden = ready;
   $('affBar').hidden = !ready; $('affBarKey').hidden = !ready;
-  if (!ready) { $('affVerdict').textContent = ''; $('affWhatIfNote').textContent = ''; return; }
+  if (!ready) { $('affVerdict').textContent = ''; $('affWhatIfNote').textContent = ''; renderSummary(cost); return; }
   if (cost.total == null) {
+    renderSummary(null);
     const names = { loanPayment: 'loan payment', propertyTax: 'property tax', homeInsurance: 'home insurance', mortgageInsurance: 'mortgage insurance' };
     $('affVerdict').textContent = `Can’t total this home yet: ${cost.missing.map(m => names[m]).join(', ')} isn’t set.`;
     $('affBar').hidden = true; $('affBarKey').hidden = true; $('affWhatIfNote').textContent = '';
@@ -848,6 +903,7 @@ function renderVerdict(cost) {
   const dropped = $('affDrop').checked;
   const takeHome = b.takeHome * (dropped ? 1 - dropPct / 100 : 1);
   const v = verdictFor(takeHome);
+  renderSummary(cost, v, dropped);
   const label = v.label ? `<b class="${v.label}">${v.label}</b>: ` : '';
   const lower = dropped ? `, with take-home pay ${dropPct}% lower` : '';
   $('affVerdict').innerHTML = (v.left >= 0
@@ -1152,7 +1208,7 @@ function renderHomeList() {
   $('listCount').textContent = list.length === d.n ? `${fmtInt(d.n)} homes` : `${fmtInt(list.length)} of ${fmtInt(d.n)}`;
   const rows = list.slice(0, state.listShown);
   $('homeList').innerHTML = rows.map(i => {
-    const lo = round100(H.est[i] * d.lowMul), hi = round100(H.est[i] * d.highMul);
+    const lo = H.est[i] * d.lowMul, hi = H.est[i] * d.highMul;
     const size = [H.beds && H.beds[i] != null ? H.beds[i] + ' bd' : '', H.sqft[i] ? fmtInt(H.sqft[i]) + ' sq ft' : ''].filter(Boolean).join(' · ');
     const bits = [H.yr[i] ? 'Built ' + H.yr[i] : '', size, d.subOf(i)].filter(Boolean).join(' · ');
     let note = mayBePartlyBuilt(d, i)
@@ -1268,12 +1324,17 @@ $('themeBtn').addEventListener('click', () => {
 });
 matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { themeLabel(); buildRamp(); drawMap(); });
 
-(async function boot() {
-  const route = parseScreenRoute(location.hash);
-  await setMarket('forsyth', route.id);
+(function boot() {
+  // The homes file is the biggest download (about 5 MB). The Budget screen doesn't
+  // need it: it downloads once the Budget screen is idle and is read when Homes or Detail opens.
+  let started = false;
+  const start = () => { if (!started) { started = true; setMarket('forsyth', parseScreenRoute(location.hash).id); } };
+  if (parseScreenRoute(location.hash).screen !== 'budget') start();
+  else setTimeout(() => (window.requestIdleCallback || (f => f()))(() => downloadMarket('forsyth'), { timeout: 3000 }), 1500);
   window.addEventListener('hashchange', () => {
     const r = parseScreenRoute(location.hash);
-    if (!r.market) return;
+    if (r.screen !== 'budget' && !started) { start(); return; }
+    if (!r.market || !cur()) return;
     if (r.market !== state.market) { setMarket(r.market, r.id); return; }
     const d = cur(), i = r.id && d ? d.H.id.indexOf(r.id) : -1;
     if (i >= 0 && i !== state.sel) selectHome(i, { from: 'link' });

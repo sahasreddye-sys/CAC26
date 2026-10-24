@@ -6,6 +6,10 @@
 <title>Forsyth MarketMap</title>
 <meta name="description" content="Forsyth MarketMap: a home-buying worksheet for Forsyth County, Georgia families. Start from your monthly budget and see what a home would really cost each month.">
 <meta name="color-scheme" content="light dark">
+<meta name="theme-color" content="#f8f9ff" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#18191b" media="(prefers-color-scheme: dark)">
+<link rel="canonical" href="https://sahasreddye-sys.github.io/CAC26/">
+<link rel="apple-touch-icon" href="assets/touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Forsyth MarketMap">
 <meta property="og:description" content="A home-buying worksheet for Forsyth County, Georgia families. Start from your monthly budget and see what a home would really cost each month.">
@@ -150,6 +154,8 @@ button { font: inherit; color: inherit; }
 .map { position: relative; background: var(--surface-low); aspect-ratio: 5 / 4; touch-action: pan-y; }
 .map canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
 .map canvas.dragging { cursor: grabbing; }
+.map canvas:focus-visible { outline: 2px solid var(--primary); outline-offset: -2px; }
+.zoom button { min-width: 44px; min-height: 44px; }
 .map .loading { position: absolute; inset: 0; display: grid; place-items: center; font-size: var(--fs-sm); color: var(--outline); }
 .map .loading[hidden] { display: none; }
 .zoom { position: absolute; right: 10px; top: 10px; display: flex; flex-direction: column; background: var(--surface); border: 1px solid var(--outline); }
@@ -345,6 +351,15 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 
 /* ---------- detail: can your family pay for it ---------- */
 .afford { padding-top: var(--sp-24); }
+.rec-summary { margin-top: var(--sp-8); font-size: var(--fs-md); font-weight: 500; font-variant-numeric: tabular-nums; }
+.rec-summary b.Comfortable, .aff-sticky b.Comfortable { color: var(--primary); }
+.rec-summary b.Tight, .aff-sticky b.Tight { color: var(--secondary); }
+.rec-summary b.Stretching, .aff-sticky b.Stretching { color: var(--error); }
+.aff-sticky { display: none; }
+@media (max-width: 960px) {
+  /* phones and tablets: keep the answer in view while the what-if controls move */
+  .aff-sticky:not(:empty) { display: block; position: sticky; top: 72px; z-index: 5; margin: 0 calc(-1 * var(--sp-16)); padding: var(--sp-8) var(--sp-16); background: var(--surface); border-bottom: 1px solid var(--outline-variant); font-size: var(--fs-sm); font-variant-numeric: tabular-nums; }
+}
 .aff-need { margin: var(--sp-8) 0 0; padding: var(--sp-12) var(--sp-12); border-radius: 4px; background: var(--surface-low); font-size: var(--fs-sm); }
 .aff-need[hidden] { display: none; }
 .afford-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 0 var(--sp-48); margin-top: var(--sp-16); }
@@ -434,7 +449,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 .money-row.primary-row .amt input { color: var(--primary); }
 .amt .per { font-size: var(--fs-xs); color: var(--outline); white-space: nowrap; }
 .steppers { display: flex; gap: var(--sp-4); flex-shrink: 0; }
-.steppers button { width: 40px; height: 40px; border: 0; border-radius: 4px; background: var(--surface-container); color: var(--on-surface-variant); display: grid; place-items: center; cursor: pointer; transition: background-color .12s, color .12s; }
+.steppers button { width: 44px; height: 44px; touch-action: manipulation; border: 0; border-radius: 4px; background: var(--surface-container); color: var(--on-surface-variant); display: grid; place-items: center; cursor: pointer; transition: background-color .12s, color .12s; }
 .steppers button:hover { background: var(--surface-high); }
 .steppers button:active { background: var(--primary); color: var(--on-primary); }
 .money-row.invalid { box-shadow: inset 0 0 0 1.5px var(--error); }
@@ -451,6 +466,8 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 .mini:focus-within { box-shadow: inset 0 0 0 1.5px var(--on-surface); }
 .mini.invalid { box-shadow: inset 0 0 0 1.5px var(--error); }
 .loan-row .src { color: var(--on-surface-variant); }
+.headline { margin: 0; font-size: var(--fs-lg); line-height: 1.35; font-weight: 500; color: var(--on-surface); text-wrap: pretty; }
+.headline b { color: var(--primary); font-weight: 700; font-variant-numeric: tabular-nums; }
 .bar-top { display: flex; justify-content: space-between; align-items: center; font-size: var(--fs-xs); font-weight: 500; }
 .bar-top .strong { font-size: var(--fs-sm); font-weight: 600; color: var(--primary); }
 .split-bar { display: flex; height: 16px; border-radius: 2px; overflow: hidden; background: var(--surface-high); }
@@ -494,7 +511,6 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 @media (max-width: 380px) {
   .money-label { flex-direction: column; gap: 0; }
   .money-label .hint { text-align: left; }
-  .steppers button { width: 36px; }
 }
 
 /* ---------- responsive ---------- */
@@ -686,6 +702,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
           <div class="table-wrap"><table class="assumptions" id="costSourcesBudget"></table></div>
         </div>
       </div>
+      <p class="headline" id="r-headline">Fill in take-home pay, debts and other costs to see what you could spend on housing.</p>
       <div class="bar-top"><span>100% of monthly take-home pay</span><span class="num strong" id="r-takeHome">—</span></div>
       <div class="split-bar" id="splitBar" role="img" aria-label="Take-home pay split will show here">
         <span class="seg-costs" id="bar-costs"></span><span class="seg-housing" id="bar-housing"></span><span class="seg-left" id="bar-left"></span>
@@ -762,7 +779,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 
     <figure class="mapfig">
       <div class="map" id="mapCard">
-        <canvas id="map" role="img" aria-label="Map of homes shaded by estimated value. Drag to pan, scroll to zoom, click a dot to open that home."></canvas>
+        <canvas id="map" role="img" tabindex="0" aria-label="Map of homes shaded by estimated value. Drag or use the arrow keys to move, scroll or press plus and minus to zoom, 0 to show the whole county. Click a dot to open that home; the list below has the same homes."></canvas>
         <div class="loading" id="mapSkel">Loading map…</div>
         <div class="zoom">
           <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
@@ -822,6 +839,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
           <p class="mono" id="rParcel"></p>
           <h2 id="rAddr">—</h2>
           <p class="meta" id="rMeta"></p>
+          <p class="rec-summary" id="rSummary"></p>
         </div>
         <div class="acts">
           <a id="rCounty" href="#" target="_blank" rel="noopener" hidden>County record ↗</a>
@@ -855,6 +873,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
       <div class="table-wrap"><table class="assumptions" id="costSources"></table></div>
         </div>
         </div>
+        <p class="aff-sticky" id="affSticky" aria-hidden="true"></p>
         <p class="aff-need" id="affNeedBudget" hidden>Fill in your <a href="#/budget">budget</a> first. Then this shows what the home would leave you each month.</p>
         <div class="afford-grid">
           <div>
@@ -959,11 +978,11 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 </div>
 
 <!-- python tools/build.py writes these version numbers; don't edit them by hand. -->
-<script>const ASSET_VERSION = 'de3a6ebb45';</script>
-<script src="assets/site-data.js?v=de3a6ebb45"></script>
-<script src="assets/planner-math.js?v=de3a6ebb45"></script>
-<script src="assets/budget-worksheet.js?v=de3a6ebb45"></script>
-<script src="assets/screens.js?v=de3a6ebb45"></script>
-<script src="assets/app.js?v=de3a6ebb45"></script>
+<script>const ASSET_VERSION = '57483d0774';</script>
+<script src="assets/site-data.js?v=57483d0774"></script>
+<script src="assets/planner-math.js?v=57483d0774"></script>
+<script src="assets/budget-worksheet.js?v=57483d0774"></script>
+<script src="assets/screens.js?v=57483d0774"></script>
+<script src="assets/app.js?v=57483d0774"></script>
 </body>
 </html>

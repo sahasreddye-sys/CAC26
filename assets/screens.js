@@ -8,6 +8,7 @@
 //   #/homes                       home lookup and map
 //   #/home/forsyth/<parcel id>    one home (the Detail tab)
 //   #/detail                      Detail tab with no home picked yet
+//   #/compare/forsyth/<id>,<id>   Detail with up to three homes side by side
 //
 // Links from the older site (#forsyth/<id>) still open the home.
 
@@ -16,6 +17,9 @@ function parseScreenRoute(hash) {
   let m = h.match(/^#\/homes?(?:\/(forsyth)(?:\/(.+))?)?$/) || h.match(/^#(forsyth)(?:\/(.+))?$/);
   if (m) return { screen: m[2] ? 'detail' : 'homes', market: m[1] || null, id: m[2] || null };
   if (h === '#/detail') return { screen: 'detail', market: null, id: null };
+  // shared compare link: parcel IDs only, never budget numbers
+  m = h.match(/^#\/compare\/(forsyth)\/(.+)$/);
+  if (m) { const ids = m[2].split(',').filter(Boolean); return { screen: 'detail', market: m[1], id: ids[0], compare: ids }; }
   return { screen: 'budget' };
 }
 

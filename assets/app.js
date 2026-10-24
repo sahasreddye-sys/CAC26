@@ -601,6 +601,7 @@ function renderResult() {
   renderSliders();
   renderNearby();
   resetAfford();
+  renderCompare();
   estSpring.snap(H.est[i]);
   updateEstimate(true);
 }
@@ -876,6 +877,71 @@ function renderAfford() {
   renderPrograms(price);
   renderVerdict(cost);
 }
+
+/* ---------------- shortlist and compare (DESIGN.md 5.4) ---------------- */
+// Parcel IDs only, in memory; gone when the page closes.
+const shortlist = [];
+const MAX_COMPARE = 3;
+
+function renderSaveButton() {
+  const d = cur(), id = d && state.sel >= 0 ? d.H.id[state.sel] : null;
+  const saved = shortlist.includes(id);
+  $('rSave').textContent = saved ? 'Remove from compare' : shortlist.length >= MAX_COMPARE ? `Compare is full (${MAX_COMPARE})` : 'Add to compare';
+  $('rSave').disabled = !saved && shortlist.length >= MAX_COMPARE;
+}
+
+function renderCompare() {
+  renderSaveButton();
+  const d = cur();
+  $('compareSec').hidden = !d || !shortlist.length;
+  if (!d || !shortlist.length) return;
+  const idx = shortlist.map(id => d.H.id.indexOf(id)).filter(i => i >= 0);
+  const s = homeCostSettings(d.market), H = d.H;
+  const cols = idx.map(i => {
+    const price = startingPrice(d, i);
+    const down = PlannerMath.downPaymentFromSavings(familyBudget.savings || 0, price, s.closingPercent) ?? 0;
+    const cost = familyHomeCost(d.market, price);
+    const fit = budgetIsFilledIn() ? homeFitLabel(d, i) : null;
+    const left = fit && cost.total != null ? familyBudget.takeHome - (familyBudget.debts || 0) - (familyBudget.otherCosts || 0) - cost.total : null;
+    const cash = Math.max(down, price * (s.minDownPercent || 0) / 100) + (PlannerMath.closingCosts(price, s.closingPercent) || 0);
+    const zone = level => { if (!d.schools) return '—'; const k = d.schools.home[level][i]; return k >= 0 ? titleCase(d.schools.levels[level][k]) : '—'; };
+    return { i, price, cost, fit, left, cash, zone };
+  });
+  const row = (name, f) => `<tr><td>${name}</td>${cols.map(c => `<td>${f(c)}</td>`).join('')}</tr>`;
+  $('compareTable').innerHTML = '<thead><tr><th scope="col"><span class="sr">Home</span></th>' + cols.map(c =>
+    `<th scope="col">${esc(H.addr[c.i] || H.id[c.i])}<br><button class="linkish" type="button" data-open="${c.i}">Open</button> · <button class="linkish" type="button" data-remove="${esc(H.id[c.i])}">Remove</button></th>`).join('') + '</tr></thead><tbody>'
+    + row('Likely sale price', c => fmtUSD(round1000(c.price)))
+    + row('Monthly total', c => c.cost.total == null ? 'not set yet' : fmtUSD(c.cost.total))
+    + row('Comfort', c => c.fit && c.fit.label ? `<b class="fit ${c.fit.label}">${c.fit.label}</b>` : 'fill in your budget')
+    + row('Left each month', c => c.left == null ? '—' : leftWords(c.left))
+    + row('Cash needed up front', c => fmtUSD(c.cash))
+    + row('Size', c => H.sqft[c.i] ? fmtInt(H.sqft[c.i]) + ' sq ft' : '—')
+    + row('Built', c => H.yr[c.i] || '—')
+    + row('Lot', c => H.ac[c.i] ? H.ac[c.i].toFixed(2) + ' ac' : '—')
+    + row('Schools', c => [c.zone('ES'), c.zone('MS'), c.zone('HS')].map(esc).join('<br>'))
+    + '</tbody>';
+  $('compareNote').textContent = (shortlist.length < 2 ? 'Open another home and press Add to compare to see them side by side. ' : '')
+    + 'Each home is shown at its likely sale price with the down payment from your savings and no HOA dues. The list is kept only until you close the page.';
+}
+
+$('rSave').addEventListener('click', () => {
+  const id = cur().H.id[state.sel], k = shortlist.indexOf(id);
+  if (k >= 0) shortlist.splice(k, 1); else if (shortlist.length < MAX_COMPARE) shortlist.push(id);
+  renderCompare();
+});
+$('compareTable').addEventListener('click', e => {
+  const open = e.target.closest('[data-open]'), remove = e.target.closest('[data-remove]');
+  if (open) selectHome(+open.dataset.open, { from: 'compare' });
+  if (remove) { shortlist.splice(shortlist.indexOf(remove.dataset.remove), 1); renderCompare(); }
+});
+$('compareCopy').addEventListener('click', async () => {
+  const btn = $('compareCopy');
+  const link = location.href.split('#')[0] + '#/compare/' + state.market + '/' + shortlist.map(encodeURIComponent).join(',');
+  try { await navigator.clipboard.writeText(link); btn.textContent = 'Link copied (home IDs only)'; }
+  catch { btn.textContent = 'Copy failed'; }
+  setTimeout(() => (btn.textContent = 'Copy compare link'), 2000);
+});
+window.addEventListener('budgetchange', () => { if (shortlist.length) renderCompare(); });
 
 // Georgia Dream limits, only what the DCA page says, with its date. No eligibility check.
 function renderPrograms(price) {
@@ -1416,6 +1482,8 @@ async function setMarket(market, selectId) {
   setStatus('');
   buildRamp(); sizeMap(); resetCam(false); renderTry(); renderStats(d);
   setupFilters(d); applyFilters();
+  const shared = parseScreenRoute(location.hash).compare;
+  if (shared) shared.forEach(id => { if (d.H.id.includes(id) && !shortlist.includes(id) && shortlist.length < MAX_COMPARE) shortlist.push(id); });
   if (selectId) {
     const i = d.H.id.indexOf(selectId);
     if (i >= 0) selectHome(i, { from: 'link' });

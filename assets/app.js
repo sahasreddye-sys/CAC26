@@ -327,10 +327,10 @@ function drawMap() {
     ctx.beginPath(); ctx.arc(x, y, rad, 0, 6.2832);
     ctx.lineWidth = width; ctx.strokeStyle = color; ctx.stroke();
   };
-  if (map.hover >= 0 && map.hover !== state.sel) ring(map.hover, css('--ink'), r + 3, 1.5);
+  if (map.hover >= 0 && map.hover !== state.sel) ring(map.hover, css('--on-surface'), r + 3, 1.5);
   if (state.sel >= 0 && d.has[state.sel]) {
     const [x, y] = toScreen(d, state.sel);
-    ctx.beginPath(); ctx.arc(x, y, 7, 0, 6.2832); ctx.fillStyle = css('--mkt'); ctx.fill();
+    ctx.beginPath(); ctx.arc(x, y, 7, 0, 6.2832); ctx.fillStyle = css('--secondary'); ctx.fill();
     ctx.lineWidth = 3; ctx.strokeStyle = isDark() ? '#000' : '#fff'; ctx.stroke();
   }
 }
@@ -522,7 +522,7 @@ function selectHome(i, opts = {}) {
   flyTo(i);
   requestDraw();
   const homeLink = `#/home/${state.market}/${encodeURIComponent(d.H.id[i])}`;
-  $('tabDetail').href = homeLink;
+  document.querySelectorAll('[data-detail-link]').forEach(a => { a.href = homeLink; });
   // picking a home from another screen opens the Detail tab (and Back returns);
   // switching homes while already on Detail just replaces the address
   if (currentScreen === 'detail') history.replaceState(null, '', homeLink);
@@ -1216,10 +1216,9 @@ function setStatus(msg, error) { const s = $('status'); s.textContent = msg; s.c
 
 async function setMarket(market, selectId) {
   state.market = market;
-  document.body.dataset.market = market;
   const nb = NB[market];
   $('result').hidden = true; $('detailEmpty').hidden = false; state.sel = -1;
-  $('tabDetail').href = '#/detail';
+  document.querySelectorAll('[data-detail-link]').forEach(a => { a.href = '#/detail'; });
   $('q').value = ''; search.items = []; renderSuggest();
   if (currentScreen === 'homes') history.replaceState(null, '', '#/homes/' + market);
 
@@ -1255,8 +1254,10 @@ async function setMarket(market, selectId) {
   }
 }
 
+const MOON_ICON = '<svg class="ms" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>';
+const SUN_ICON = '<svg class="ms" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>';
 function themeLabel() {
-  $('themeBtn').querySelector('.ms').textContent = isDark() ? 'light_mode' : 'dark_mode';
+  $('themeBtn').innerHTML = isDark() ? SUN_ICON : MOON_ICON;
   $('themeBtn').setAttribute('aria-label', isDark() ? 'Switch to light mode' : 'Switch to dark mode');
 }
 themeLabel();

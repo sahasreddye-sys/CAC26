@@ -89,6 +89,7 @@ function fmtShort(v) {
   return '$' + Math.round(v / 1e3) + 'k';
 }
 function fmtPct(v, d = 1) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d) + '%'; }
+function round100(v) { return Math.round(v / 100) * 100; }
 function round1000(v) { return Math.round(v / 1000) * 1000; }
 // one short sentence for screen readers, sent after typing pauses
 function announce(id, text) { clearTimeout(announce[id]); announce[id] = setTimeout(() => { $(id).textContent = text; }, 700); }
@@ -756,7 +757,8 @@ function resetAfford() {
   $('affPrice').value = fmtInt(round1000(startingPrice(d, i)));
   $('affDown').value = '';
   $('affIns').value = '';
-  $('affDrop').checked = false;
+  $('affHoa').value = '';
+  $('affDrop').value = plannerSetting('comfort.what_if_income_drop_percent').value ?? 10;
   const rate = homeCostSettings(d.market).ratePercent;
   $('affRate').value = rate ?? 7;
   $('affSearch').href = 'https://www.google.com/search?q=' + encodeURIComponent(`${d.H.addr[i]}, Forsyth County GA for sale`);
@@ -769,6 +771,26 @@ function readMoneyBox(id) {
   return Number.isNaN(v) ? undefined : v;
 }
 
+// "what's this?" words: one plain sentence each (DESIGN.md principle 5)
+const GLOSSARY = {
+  assessed: ['assessed value', 'In Georgia, property tax is charged on 40% of a home’s value. That 40%, minus any exemption, is the assessed value.'],
+  millage: ['a mill', 'The local tax rate is set in mills: one mill is $1 of tax for every $1,000 of assessed value.'],
+  pmi: ['mortgage insurance', 'Insurance that protects the lender, not you. It is usually required when the down payment is under 20% of the price.'],
+  escrow: ['escrow', 'An account many lenders use to collect property tax and insurance with each monthly payment and pay those bills for you.'],
+};
+const openTerms = {};
+function term(key) {
+  const [word, def] = GLOSSARY[key], id = 'g-' + key, open = !!openTerms[id];
+  return ` <button class="term" type="button" aria-expanded="${open}" aria-controls="${id}">what’s ${word}?</button><span class="term-def" id="${id}"${open ? '' : ' hidden'}>${esc(def)}</span>`;
+}
+// the toggle itself is in screens.js; remember what is open so a redraw keeps it open
+document.addEventListener('click', e => {
+  const b = e.target.closest('.term');
+  if (b) openTerms[b.getAttribute('aria-controls')] = b.getAttribute('aria-expanded') === 'true';
+});
+
+const pctText = v => (+v).toFixed(1).replace(/\.0$/, '') + '%';
+
 function renderAfford() {
   const d = cur(), i = state.sel;
   if (!d || i < 0) return;
@@ -776,14 +798,15 @@ function renderAfford() {
   if (!aff.rateMoved && s.ratePercent != null) $('affRate').value = s.ratePercent;
   const rate = +$('affRate').value;
   $('affRateOut').textContent = rate.toFixed(3).replace(/0+$/, '').replace(/\.$/, '') + '%';
-  $('affDropPct').textContent = plannerSetting('comfort.what_if_income_drop_percent').value ?? 10;
+  $('affDropOut').textContent = $('affDrop').value + '%';
 
   const price = readMoneyBox('affPrice');
   const typedDown = readMoneyBox('affDown');
   const quote = readMoneyBox('affIns');
+  const hoa = readMoneyBox('affHoa');
   const savings = familyBudget.savings || 0;
-  const down = typedDown != null ? Math.min(typedDown, price || 0)
-    : PlannerMath.downPaymentFromSavings(savings, price || 0, s.closingPercent) ?? 0;
+  const fromSavings = PlannerMath.downPaymentFromSavings(savings, price || 0, s.closingPercent) ?? 0;
+  const down = typedDown != null ? Math.min(typedDown, price || 0) : fromSavings;
   if (!aff.downTyped) $('affDown').placeholder = fmtInt(down);
 
   $('affPriceNote').textContent = salePercentAbove()
@@ -791,35 +814,76 @@ function renderAfford() {
     : 'Starts at the model’s estimate. Type an asking price to check it.';
   $('affDownNote').textContent = typedDown != null ? 'Your number' : `From your savings after ${s.closingPercent}% closing costs`;
   $('affInsNote').textContent = quote != null ? 'Your quote, per year' : `Blank uses $${(+s.insurancePer1000).toFixed(2)} per $1,000 of value a year (${plannerSetting('insurance.homeowners_rate_per_1000').cite})`;
+  $('affHoaNote').textContent = hoa ? 'Your number, per month' : 'Many Forsyth subdivisions have them. Blank counts as $0.';
 
   if (price == null || price === undefined) {
     $('affTable').innerHTML = ''; $('affVerdict').textContent = 'Type a price to check.'; $('affPriceCheck').textContent = '';
+    $('affInterest').textContent = ''; $('affAmortWrap').hidden = true; $('affDownWhatIf').textContent = ''; $('affEscrow').textContent = '';
     renderSummary(null);
     return;
   }
   renderPriceCheck(d, i, price);
 
   // a down payment below the minimum isn't allowed, so the loan is figured with the minimum
+  const costFor = downPayment => PlannerMath.monthlyHousingCost({ ...s, ratePercent: rate, price,
+    downPayment: s.minDownPercent != null ? Math.max(downPayment, price * s.minDownPercent / 100) : downPayment,
+    insuranceMonthly: quote != null ? quote / 12 : null, hoaMonthly: hoa || 0 });
   const downUsed = s.minDownPercent != null ? Math.max(down, price * s.minDownPercent / 100) : down;
-  const cost = PlannerMath.monthlyHousingCost({ ...s, ratePercent: rate, price, downPayment: downUsed,
-    insuranceMonthly: quote != null ? quote / 12 : null });
+  const cost = costFor(down);
   const downPct = price ? downUsed / price * 100 : 0;
   const millage = plannerSetting('property_tax.millage.forsyth_county');
   const notes = {
-    loanPayment: `${fmtUSD(cost.loan)} loan at ${$('affRateOut').textContent} for ${s.termYears} years` + (downUsed > down ? ` (with the ${s.minDownPercent}% minimum down)` : ''),
-    propertyTax: s.mills != null ? `40% of the price × ${s.mills} mills (${millage.cite})` : 'Not set yet: the tax rate needs an official source',
-    homeInsurance: quote != null ? 'Your quote' : `Estimate: ${plannerSetting('insurance.homeowners_rate_per_1000').cite}`,
-    mortgageInsurance: downPct >= s.pmiRequiredBelowPercent ? `None: ${s.pmiRequiredBelowPercent}% or more down`
-      : `Under ${s.pmiRequiredBelowPercent}% down (${downPct.toFixed(1)}%): $${s.pmiPer100k} a month per $100,000 borrowed`,
+    loanPayment: esc(`${fmtUSD(cost.loan)} loan at ${$('affRateOut').textContent} for ${s.termYears} years` + (downUsed > down ? ` (with the ${s.minDownPercent}% minimum down)` : '')),
+    propertyTax: s.mills != null ? esc(`40% of the price × ${s.mills} mills (${millage.cite})`) + term('assessed') + term('millage') : 'Not set yet: the tax rate needs an official source',
+    homeInsurance: esc(quote != null ? 'Your quote' : `Estimate: ${plannerSetting('insurance.homeowners_rate_per_1000').cite}`),
+    mortgageInsurance: esc(downPct >= s.pmiRequiredBelowPercent ? `None: ${s.pmiRequiredBelowPercent}% or more down`
+      : `Under ${s.pmiRequiredBelowPercent}% down (${downPct.toFixed(1)}%): $${s.pmiPer100k} a month per $100,000 borrowed`) + term('pmi'),
+    hoa: hoa ? 'Your number' : 'Not counted. Type your HOA dues above if the home has them.',
   };
-  const labels = { loanPayment: 'Loan payment', propertyTax: 'Property tax', homeInsurance: 'Home insurance', mortgageInsurance: 'Mortgage insurance' };
+  const labels = { loanPayment: 'Loan payment', propertyTax: 'Property tax', homeInsurance: 'Home insurance', mortgageInsurance: 'Mortgage insurance', hoa: 'HOA dues' };
   $('affTable').innerHTML = '<tbody>' + Object.keys(labels).map(k => cost[k] == null
-    ? `<tr><td>${labels[k]}<small>${esc(notes[k])}</small></td><td class="missing">not set yet</td></tr>`
-    : `<tr><td>${labels[k]}<small>${esc(notes[k])}</small></td><td>${fmtUSD(cost[k])}</td></tr>`).join('') +
+    ? `<tr><td>${labels[k]}<small>${notes[k]}</small></td><td class="missing">not set yet</td></tr>`
+    : `<tr><td>${labels[k]}<small>${notes[k]}</small></td><td>${fmtUSD(cost[k])}</td></tr>`).join('') +
     `<tr class="total"><td>Total each month</td><td>${cost.total == null ? '—' : fmtUSD(cost.total)}</td></tr></tbody>`;
+  $('affEscrow').innerHTML = 'Lenders often collect the tax and insurance with the loan payment.' + term('escrow');
+
+  // interest over the life of the loan
+  const interest = PlannerMath.totalInterest(cost.loan, rate, s.termYears);
+  $('affInterest').innerHTML = interest == null ? '' : `Over ${s.termYears} years you would pay about <b>${fmtUSD(interest)}</b> in interest on a ${fmtUSD(cost.loan)} loan.`;
+  const years = PlannerMath.amortizationByYear(cost.loan, rate, s.termYears);
+  $('affAmortWrap').hidden = !years || !cost.loan;
+  if (years && $('affAmortWrap').open) $('affAmort').innerHTML = tableHTML(['Year', 'Interest', 'Principal', 'Still owed'],
+    years.map(y => [y.year, fmtUSD(y.interest), fmtUSD(y.principal), fmtUSD(y.balance)]));
+
+  // down payment what-if: the slider and the box show the same down payment
+  const slider = $('affDownPct');
+  slider.min = s.minDownPercent ?? 0;
+  slider.value = Math.min(+slider.max, downPct);
+  slider.style.setProperty('--p', ((slider.value - slider.min) / (slider.max - slider.min) * 100) + '%');
+  $('affDownOut').textContent = `${fmtShort(downUsed)} (${pctText(downPct)})`;
+  const base = costFor(fromSavings);
+  const change = cost.total != null && base.total != null ? cost.total - base.total : null;
+  const at20 = costFor(price * s.pmiRequiredBelowPercent / 100);
+  const pmiNow = cost.mortgageInsurance;
+  $('affDownWhatIf').textContent = [
+    change != null && Math.abs(change) >= 1 ? `With this down payment the monthly total is ${fmtUSD(Math.abs(change))} ${change > 0 ? 'more' : 'less'} than with the one from your savings.` : '',
+    pmiNow > 0 ? `At ${s.pmiRequiredBelowPercent}% down (${fmtUSD(price * s.pmiRequiredBelowPercent / 100)}) mortgage insurance stops; the total would be about ${fmtUSD(at20.total)} a month.`
+      : `At ${pctText(downPct)} down there is no mortgage insurance.`,
+  ].filter(Boolean).join(' ');
 
   renderCash(price, down, s);
+  renderPrograms(price);
   renderVerdict(cost);
+}
+
+// Georgia Dream limits, only what the DCA page says, with its date. No eligibility check.
+function renderPrograms(price) {
+  const g = k => plannerSetting('programs.georgia_dream.' + k);
+  const maxPrice = g('max_sales_price'), inc12 = g('income_limit_1_2_people'), inc3 = g('income_limit_3_plus_people');
+  if (maxPrice.value == null) { $('affPrograms').innerHTML = ''; return; }
+  $('affPrograms').innerHTML = `<p><b>Georgia Dream</b> (Georgia DCA) offers home loans, with down payment help as an option. The DCA page lists a maximum sales price of ${fmtUSD(maxPrice.value)} and yearly income limits of ${fmtUSD(inc12.value)} for 1–2 people and ${fmtUSD(inc3.value)} for 3 or more, effective ${esc(longDate(maxPrice.as_of))}.`
+    + (price > maxPrice.value ? ` The price above is higher than that maximum.` : '') + `</p>`
+    + `<p>Rules change and this planner can’t check if you qualify. Check with a participating lender or on the <a href="https://dca.georgia.gov/affordable-housing/home-ownership/georgia-dream" target="_blank" rel="noopener">Georgia Dream page ↗</a>.</p>`;
 }
 
 function renderPriceCheck(d, i, price) {
@@ -868,12 +932,12 @@ function renderCash(price, down, s) {
 const leftWords = left => left >= 0 ? `${fmtUSD(left)} left` : `${fmtUSD(-left)} short each month`;
 
 // The short answer shown next to the address and, on phones, pinned above the what-if controls.
-function renderSummary(cost, v, dropped) {
+function renderSummary(cost, v) {
   const price = readMoneyBox('affPrice');
   let html = '';
   if (cost && cost.total != null) {
     html = `About <b>${fmtUSD(cost.total)}</b> a month at ${fmtShort(price)}`;
-    if (v && v.label) html += ` · <b class="${v.label}">${v.label}</b>, ${esc(leftWords(v.left))}${dropped ? ' after the income drop' : ''}`;
+    if (v && v.label) html += ` · <b class="${v.label}">${v.label}</b>, ${esc(leftWords(v.left))}`;
     else if (!budgetIsFilledIn()) html += ' · fill in your budget to see if it fits';
   }
   $('rSummary').innerHTML = html;
@@ -887,12 +951,12 @@ function renderVerdict(cost) {
   if (!ready) { $('affVerdict').textContent = ''; $('affWhatIfNote').textContent = ''; renderSummary(cost); return; }
   if (cost.total == null) {
     renderSummary(null);
-    const names = { loanPayment: 'loan payment', propertyTax: 'property tax', homeInsurance: 'home insurance', mortgageInsurance: 'mortgage insurance' };
+    const names = { loanPayment: 'loan payment', propertyTax: 'property tax', homeInsurance: 'home insurance', mortgageInsurance: 'mortgage insurance', hoa: 'HOA dues' };
     $('affVerdict').textContent = `Can’t total this home yet: ${cost.missing.map(m => names[m]).join(', ')} isn’t set.`;
     $('affBar').hidden = true; $('affBarKey').hidden = true; $('affWhatIfNote').textContent = '';
     return;
   }
-  const dropPct = plannerSetting('comfort.what_if_income_drop_percent').value ?? 10;
+  const dropPct = +$('affDrop').value;
   const cut1 = plannerSetting('comfort.comfortable_min_left_percent').value;
   const cut2 = plannerSetting('comfort.stretching_below_left_percent').value;
   const b = familyBudget;
@@ -900,20 +964,19 @@ function renderVerdict(cost) {
     const pct = PlannerMath.leftAfterHousingPercent(takeHome, b.debts, b.otherCosts, cost.total);
     return { pct, left: takeHome * pct / 100, label: PlannerMath.comfortLabel(pct, cut1, cut2) };
   };
-  const dropped = $('affDrop').checked;
-  const takeHome = b.takeHome * (dropped ? 1 - dropPct / 100 : 1);
+  // the verdict is at full take-home pay; the income-drop slider only changes the what-if line
+  const takeHome = b.takeHome;
   const v = verdictFor(takeHome);
-  renderSummary(cost, v, dropped);
+  renderSummary(cost, v);
   const label = v.label ? `<b class="${v.label}">${v.label}</b>: ` : '';
-  const lower = dropped ? `, with take-home pay ${dropPct}% lower` : '';
   $('affVerdict').innerHTML = (v.left >= 0
-    ? `${label}about <b>${fmtUSD(v.left)}</b> (${v.pct.toFixed(0)}% of take-home pay) left each month after every bill, including this home${lower}.`
-    : `${label}every bill plus this home would come to <b>${fmtUSD(-v.left)} more</b> than take-home pay each month${lower}.`)
+    ? `${label}about <b>${fmtUSD(v.left)}</b> (${v.pct.toFixed(0)}% of take-home pay) left each month after every bill, including this home.`
+    : `${label}every bill plus this home would come to <b>${fmtUSD(-v.left)} more</b> than take-home pay each month.`)
     + (v.label ? ` Comfortable means ${cut1}% or more left; stretching means under ${cut2}%.` : '');
-  const other = verdictFor(dropped ? b.takeHome : b.takeHome * (1 - dropPct / 100));
-  $('affWhatIfNote').textContent = dropped
-    ? `At your full take-home pay: ${other.label ? other.label + ', ' : ''}${leftWords(other.left)}.`
-    : `If take-home pay dropped ${dropPct}%: ${other.label ? other.label + ', ' : ''}${leftWords(other.left)}.`;
+  const other = verdictFor(b.takeHome * (1 - dropPct / 100));
+  $('affWhatIfNote').textContent = dropPct > 0
+    ? `If take-home pay dropped ${dropPct}% (to ${fmtUSD(b.takeHome * (1 - dropPct / 100))}): ${other.label ? other.label + ', ' : ''}${leftWords(other.left)}.`
+    : 'Move the income drop slider to see what happens if take-home pay falls.';
   const costs = Math.min((b.debts || 0) + (b.otherCosts || 0), takeHome);
   const home = Math.min(cost.total, Math.max(0, takeHome - costs));
   const left = Math.max(0, takeHome - costs - home);
@@ -924,10 +987,18 @@ function renderVerdict(cost) {
   announce('detailAnnounce', `${cur().H.addr[state.sel]}: about ${fmtUSD(cost.total)} a month. ${v.label ? v.label + ', ' : ''}${leftWords(v.left)}.`);
 }
 
-['affPrice', 'affIns'].forEach(id => $(id).addEventListener('input', renderAfford));
+['affPrice', 'affIns', 'affHoa'].forEach(id => $(id).addEventListener('input', renderAfford));
 $('affDown').addEventListener('input', () => { aff.downTyped = $('affDown').value.trim() !== ''; renderAfford(); });
 $('affRate').addEventListener('input', () => { aff.rateMoved = true; renderAfford(); });
-$('affDrop').addEventListener('change', renderAfford);
+$('affDrop').addEventListener('input', renderAfford);
+$('affDownPct').addEventListener('input', () => {
+  const price = readMoneyBox('affPrice');
+  if (!price) return;
+  $('affDown').value = fmtInt(round100(price * $('affDownPct').value / 100));
+  aff.downTyped = true;
+  renderAfford();
+});
+$('affAmortWrap').addEventListener('toggle', renderAfford);
 $('affPrint').addEventListener('click', () => window.print());
 window.addEventListener('budgetchange', () => { if (state.sel >= 0) renderAfford(); });
 

@@ -363,7 +363,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 .aff-need { margin: var(--sp-8) 0 0; padding: var(--sp-12) var(--sp-12); border-radius: 4px; background: var(--surface-low); font-size: var(--fs-sm); }
 .aff-need[hidden] { display: none; }
 .afford-grid { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: 0 var(--sp-48); margin-top: var(--sp-16); }
-.aff-inputs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-8); }
+.aff-inputs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--sp-8); }
 .aff-field { display: flex; flex-direction: column; gap: var(--sp-4); background: var(--surface-low); border-radius: 4px; padding: var(--sp-8); font-size: var(--fs-xs); color: var(--on-surface-variant); }
 .aff-field > span:first-child { font-weight: 600; text-transform: uppercase; letter-spacing: .06em; font-size: var(--fs-xs); }
 .aff-field em { font-style: normal; font-weight: 400; text-transform: none; letter-spacing: 0; }
@@ -372,6 +372,16 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 .aff-box input:focus { outline: none; border-color: var(--on-surface); }
 .aff-box input.invalid { border-color: var(--error); }
 .aff-field small { font-size: var(--fs-xs); line-height: 16px; color: var(--outline); }
+.aff-interest { margin: var(--sp-12) 0 var(--sp-4); font-size: var(--fs-sm); }
+.amort { margin: var(--sp-8) 0 var(--sp-12); font-size: var(--fs-sm); }
+.amort summary { cursor: pointer; color: var(--on-surface-variant); }
+.amort table { margin-top: var(--sp-8); font-size: var(--fs-xs); }
+.programs { font-size: var(--fs-sm); margin-bottom: var(--sp-16); }
+.programs p + p { margin-top: var(--sp-8); }
+.next-steps { font-size: var(--fs-sm); padding-left: var(--sp-24); margin-bottom: var(--sp-16); }
+.term { border: 0; background: none; padding: 0 2px; font: inherit; font-size: var(--fs-xs); color: var(--primary); text-decoration: underline dotted; text-underline-offset: 3px; cursor: pointer; }
+.term-def { display: block; margin: var(--sp-4) 0; padding: var(--sp-4) var(--sp-8); border-left: 2px solid var(--primary); background: var(--surface-low); font-size: var(--fs-xs); color: var(--on-surface); }
+.term-def[hidden] { display: none; }
 .aff-check { margin: var(--sp-16) 0 0; font-size: var(--fs-sm); line-height: 1.5; }
 .aff-table { margin-top: var(--sp-12); }
 .aff-table td { padding: var(--sp-8) 0 var(--sp-8) var(--sp-16); }
@@ -881,9 +891,13 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
               <label class="aff-field"><span>Price to check</span><span class="aff-box">$<input type="text" id="affPrice" inputmode="numeric" autocomplete="off"></span><small id="affPriceNote"></small></label>
               <label class="aff-field"><span>Down payment</span><span class="aff-box">$<input type="text" id="affDown" inputmode="numeric" autocomplete="off"></span><small id="affDownNote"></small></label>
               <label class="aff-field"><span>Insurance quote <em>(optional)</em></span><span class="aff-box">$<input type="text" id="affIns" inputmode="numeric" autocomplete="off" placeholder="per year"></span><small id="affInsNote"></small></label>
+              <label class="aff-field"><span>HOA dues <em>(optional)</em></span><span class="aff-box">$<input type="text" id="affHoa" inputmode="numeric" autocomplete="off" placeholder="per month"></span><small id="affHoaNote">Many Forsyth subdivisions have them. Blank counts as $0.</small></label>
             </div>
             <p class="aff-check" id="affPriceCheck"></p>
             <table class="aff-table" id="affTable"></table>
+            <p class="fine" id="affEscrow"></p>
+            <p class="aff-interest" id="affInterest"></p>
+            <details class="amort no-print" id="affAmortWrap"><summary>Year-by-year loan table</summary><div class="table-wrap"><table id="affAmort"></table></div></details>
             <p class="aff-verdict" id="affVerdict"></p>
             <div class="split-bar" id="affBar" role="img"><span class="seg-costs" id="aff-bar-costs"></span><span class="seg-housing" id="aff-bar-home"></span><span class="seg-left" id="aff-bar-left"></span></div>
             <p class="fine" id="affBarKey"></p>
@@ -892,10 +906,23 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
             <h4 class="aff-h">Cash needed up front</h4>
             <dl class="ledger" id="affCash"></dl>
             <h4 class="aff-h">What if</h4>
-            <div class="sl"><label for="affRate">Interest rate</label><input type="range" id="affRate" min="3" max="10" step="0.01"><output id="affRateOut" for="affRate"></output></div>
-            <label class="toggle-row aff-toggle"><span><b>Income drops <span id="affDropPct">10</span>%</b><small id="affDropNote">Same costs, less take-home pay</small></span><input type="checkbox" class="switch" id="affDrop"></label>
+            <div class="sliders">
+              <div class="sl"><label for="affRate">Interest rate</label><input type="range" id="affRate" min="3" max="10" step="0.01"><output id="affRateOut" for="affRate"></output></div>
+              <div class="sl"><label for="affDownPct">Down payment</label><input type="range" id="affDownPct" min="3" max="50" step="0.5" list="downMarks"><output id="affDownOut" for="affDownPct"></output></div>
+              <datalist id="downMarks"><option value="20"></option></datalist>
+              <div class="sl"><label for="affDrop">Income drop</label><input type="range" id="affDrop" min="0" max="30" step="1" value="10"><output id="affDropOut" for="affDrop">10%</output></div>
+            </div>
+            <p class="fine" id="affDownWhatIf"></p>
             <p class="fine" id="affWhatIfNote"></p>
             <p class="fine no-print"><a id="affSearch" href="#" target="_blank" rel="noopener">Look this address up online ↗</a> to see if it's listed for sale.</p>
+            <h4 class="aff-h">Programs to check</h4>
+            <div class="programs" id="affPrograms"></div>
+            <h4 class="aff-h">Next steps</h4>
+            <ol class="plain-list next-steps">
+              <li>Talk with a <a href="https://www.consumerfinance.gov/find-a-housing-counselor/" target="_blank" rel="noopener">HUD-approved housing counselor ↗</a> about your budget and programs.</li>
+              <li>Get ready to shop and compare loans with the CFPB’s guides: <a href="https://www.consumerfinance.gov/owning-a-home/prepare/" target="_blank" rel="noopener">prepare to shop ↗</a>, <a href="https://www.consumerfinance.gov/owning-a-home/explore/" target="_blank" rel="noopener">explore loan choices ↗</a>, <a href="https://www.consumerfinance.gov/owning-a-home/compare/" target="_blank" rel="noopener">choose a loan offer ↗</a>.</li>
+              <li>Before closing, the CFPB says you’ll need a home inspection and to shop for homeowner’s and title insurance (<a href="https://www.consumerfinance.gov/owning-a-home/close/" target="_blank" rel="noopener">get ready to close ↗</a>).</li>
+            </ol>
           </div>
         </div>
       </section>
@@ -978,11 +1005,11 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 </div>
 
 <!-- python tools/build.py writes these version numbers; don't edit them by hand. -->
-<script>const ASSET_VERSION = '57483d0774';</script>
-<script src="assets/site-data.js?v=57483d0774"></script>
-<script src="assets/planner-math.js?v=57483d0774"></script>
-<script src="assets/budget-worksheet.js?v=57483d0774"></script>
-<script src="assets/screens.js?v=57483d0774"></script>
-<script src="assets/app.js?v=57483d0774"></script>
+<script>const ASSET_VERSION = 'fa66f3e550';</script>
+<script src="assets/site-data.js?v=fa66f3e550"></script>
+<script src="assets/planner-math.js?v=fa66f3e550"></script>
+<script src="assets/budget-worksheet.js?v=fa66f3e550"></script>
+<script src="assets/screens.js?v=fa66f3e550"></script>
+<script src="assets/app.js?v=fa66f3e550"></script>
 </body>
 </html>

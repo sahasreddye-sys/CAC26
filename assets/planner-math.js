@@ -102,7 +102,7 @@ const PlannerMath = {
   // the total is null too, so the app never shows a total with a part left out.
   //   c = { price, downPayment, ratePercent, termYears, assessmentRatio, mills,
   //         exemption, insurancePer1000, insuranceMonthly (a typed quote, optional),
-  //         pmiPer100k, pmiRequiredBelowPercent }
+  //         pmiPer100k, pmiRequiredBelowPercent, hoaMonthly (optional, typed in) }
   monthlyHousingCost(c) {
     const loan = Math.max(0, c.price - c.downPayment);
     const parts = {
@@ -110,10 +110,39 @@ const PlannerMath = {
       propertyTax: PlannerMath.monthlyPropertyTax(c.price, c.assessmentRatio, c.mills, c.exemption),
       homeInsurance: c.insuranceMonthly != null ? c.insuranceMonthly : PlannerMath.monthlyHomeInsurance(c.price, c.insurancePer1000),
       mortgageInsurance: PlannerMath.monthlyMortgageInsurance(loan, c.price, c.downPayment, c.pmiPer100k, c.pmiRequiredBelowPercent),
+      hoa: c.hoaMonthly > 0 ? c.hoaMonthly : 0, // HOA dues are only counted when the family types them
     };
     const missing = Object.keys(parts).filter(k => parts[k] == null);
     const total = missing.length ? null : Object.values(parts).reduce((a, b) => a + b, 0);
     return { loan, ...parts, total, missing };
+  },
+
+  // Interest paid over the whole loan: every monthly payment added up, minus what was borrowed.
+  totalInterest(loanAmount, annualRatePercent, termYears) {
+    const payment = PlannerMath.monthlyLoanPayment(loanAmount, annualRatePercent, termYears);
+    if (payment == null) return null;
+    return payment * termYears * 12 - loanAmount;
+  },
+
+  // Year-by-year split of the loan payments into interest and principal, and
+  // what is still owed at the end of each year. Each month, interest is the
+  // balance times the monthly rate and the rest of the payment pays it down.
+  amortizationByYear(loanAmount, annualRatePercent, termYears) {
+    const payment = PlannerMath.monthlyLoanPayment(loanAmount, annualRatePercent, termYears);
+    if (payment == null) return null;
+    const r = annualRatePercent / 100 / 12;
+    let balance = loanAmount;
+    const years = [];
+    for (let y = 1; y <= termYears; y++) {
+      let interest = 0, principal = 0;
+      for (let m = 0; m < 12; m++) {
+        const owed = balance * r;
+        const paid = Math.min(balance, payment - owed);
+        interest += owed; principal += paid; balance -= paid;
+      }
+      years.push({ year: y, interest, principal, balance: Math.max(0, balance) });
+    }
+    return years;
   },
 
   // Share of take-home pay left after every monthly cost, as a percent.

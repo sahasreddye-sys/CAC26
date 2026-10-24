@@ -48,10 +48,10 @@ window.addEventListener('hashchange', () => {
   showScreen(route);
 });
 
-// The small (i) buttons: each opens a short explanation of the section it sits in.
+// The small (i) buttons and the "what's this?" words: each opens a short explanation in place.
 // Every button that names a panel in aria-controls (the icon, or a text link) opens the same panel.
 document.addEventListener('click', e => {
-  const btn = e.target.closest('[aria-controls^="info-"]');
+  const btn = e.target.closest('[aria-controls^="info-"], [aria-controls^="g-"]');
   if (!btn) return;
   const panel = document.getElementById(btn.getAttribute('aria-controls'));
   const open = panel.hidden;

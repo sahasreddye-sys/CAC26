@@ -16,7 +16,8 @@ const familyBudget = {
   monthlySaving: null, // optional, only for months-to-save
 };
 
-let plannerConfig = null; // planner-config.json, loaded once
+// planner-config.json, delivered by assets/site-data.js (made by tools/build.py)
+let plannerConfig = window.PLANNER_CONFIG || null;
 
 // Reads one entry from planner-config.json, e.g. plannerSetting('loan.default_interest_rate').
 function plannerSetting(path) {
@@ -24,6 +25,15 @@ function plannerSetting(path) {
   for (const key of path.split('.')) node = node && node[key];
   return node || { value: null, source: 'TODO' };
 }
+
+// "2026-10-22" -> "October 22, 2026" (as_of dates in the config)
+function longDate(iso) {
+  const d = new Date(String(iso) + 'T00:00:00');
+  return isNaN(d) ? String(iso || '') : d.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+}
+
+// A made-up family for first-time visitors and the demo. Not real data.
+const EXAMPLE_FAMILY = { takeHome: 8200, debts: 650, otherCosts: 3100, savings: 70000, grossMonthly: 11000, monthlySaving: 900 };
 
 // Everything the monthly cost needs besides the price and down payment.
 // The family's own rate and loan length win over the config defaults.
@@ -103,8 +113,8 @@ const BUDGET_FIELDS = {
   const configValue = plannerSetting;
 
   function sourceLine(label, entry, unitText) {
-    if (entry.value == null) return `${label}: no starting value yet (TODO in planner-config.json). Type your own.`;
-    return `${label}: starts at ${entry.value}${unitText} (${entry.cite || entry.source}, ${entry.as_of})`;
+    if (entry.value == null) return `${label}: not set yet. Type your own.`;
+    return `${label} starts at ${entry.value}${unitText}, as of ${longDate(entry.as_of)}. Source: ${entry.cite || entry.source}.`;
   }
 
   function applyDefaults() {
@@ -164,6 +174,10 @@ const BUDGET_FIELDS = {
     byId('r-narrativeWrap').hidden = false;
     renderSplit(b.takeHome, Math.min(costs, b.takeHome), left > 0 ? limit : 0);
     renderMaxPrice(left > 0 ? limit : 0);
+    clearTimeout(render.say);
+    render.say = setTimeout(() => {
+      byId('budgetAnnounce').textContent = `Housing that leaves you comfortable: ${byId('r-comfortLimit').textContent}. Price you could carry: ${byId('r-maxPrice').textContent}.`;
+    }, 700);
     announceBudgetChange();
   }
 
@@ -256,22 +270,31 @@ const BUDGET_FIELDS = {
     form.reset();
     for (const name of Object.keys(familyBudget)) familyBudget[name] = null;
     if (plannerConfig) applyDefaults();
+    byId('exampleNote').hidden = true;
     render();
     byId('clearNote').textContent = 'Cleared.';
     setTimeout(() => { byId('clearNote').textContent = ''; }, 2000);
     byId('b-takeHome').focus();
   }
 
+  function fillExample() {
+    for (const [name, value] of Object.entries(EXAMPLE_FAMILY)) byId('b-' + name).value = withCommas(value);
+    byId('exampleNote').hidden = false;
+    render();
+  }
+
   form.addEventListener('input', render);
   form.addEventListener('submit', e => e.preventDefault());
   byId('clearBudget').addEventListener('click', clearBudget);
+  byId('tryExample').addEventListener('click', fillExample);
 
+  if (plannerConfig) applyDefaults();
+  else {
+    // site-data.js didn't load: fall back to a 30-year loan and let the family type a rate
+    byId('b-termYears').value = 30;
+    byId('b-ratePercent-src').textContent = 'The planner’s starting numbers didn’t load. Type your own rate; costs that need a source show “not set yet”.';
+    byId('b-termYears-src').textContent = 'Length: 30 years.';
+    byId('configNotice').hidden = false;
+  }
   render();
-  fetch('planner-config.json?v=' + (typeof ASSET_VERSION === 'string' ? ASSET_VERSION : ''))
-    .then(r => { if (!r.ok) throw new Error(r.status); return r.json(); })
-    .then(config => { plannerConfig = config; applyDefaults(); render(); })
-    .catch(() => {
-      byId('b-ratePercent-src').textContent = 'Couldn’t load planner-config.json. Type your own rate.';
-      byId('b-termYears-src').textContent = 'Couldn’t load planner-config.json. Type your own loan length.';
-    });
 })();

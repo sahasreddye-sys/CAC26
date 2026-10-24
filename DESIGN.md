@@ -115,7 +115,7 @@ The model predicts the county's assessed value. Buyers care about sale price, an
 
 - Show a price range, not one number.
 - Adjust toward sale price using the sales-ratio results from the accuracy section. Only Alpharetta sales were tested, so for Forsyth, say plainly that the adjustment is less certain, or show only the county-based estimate.
-- Homes not in the 99,524-home dataset (new construction, recent splits) are not supported. Say so when an address is not found.
+- Homes not in the Forsyth dataset (80,306 homes in the 2025 tax records; new construction and recent splits are missing) are not supported. Say so when an address is not found.
 - Listings are entered by the user (address plus asking price). Do not scrape listing sites.
 
 ## 9. Privacy

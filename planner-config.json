@@ -1,11 +1,11 @@
 {
-  "_read_me": "Every number the planner uses that is not typed in by the family lives here. Each entry has value, unit, source and as_of. A value of null with source TODO means it has not been checked yet; the app shows 'not set yet' instead of guessing. Values filled on 2026-10-02 were found by Claude from the sources listed and still need Sahas to double-check.",
+  "_read_me": "Every number the planner uses that is not typed in by the family lives here. Each entry has value, unit, source and as_of. A value of null with source TODO means it has not been checked yet; the app shows 'not set yet' instead of guessing. Values were looked up with help from an AI assistant from the sources listed; NEEDS_OWNER.md lists what Sahas still needs to confirm. After editing, run python tools/build.py so the site picks up the change.",
   "loan": {
     "default_interest_rate": {
-      "value": 7.28,
+      "value": 7.32,
       "unit": "percent per year",
-      "source": "Freddie Mac Primary Mortgage Market Survey, 30-year fixed average: https://freddiemac.gcs-web.com/news-releases/news-release-details/mortgage-rates-average-728",
-      "as_of": "2026-10-01",
+      "source": "Freddie Mac Primary Mortgage Market Survey: 'The 30-year fixed-rate mortgage averaged 7.32% as of October 22, 2026': https://www.freddiemac.com/pmms",
+      "as_of": "2026-10-22",
       "note": "National weekly average. A family's real rate depends on credit, points and lender, so they can type their own. Update weekly or before the video.",
       "cite": "Freddie Mac weekly rate survey"
     },
@@ -115,18 +115,20 @@
     "comfortable_min_left_percent": {
       "value": 20,
       "unit": "percent of take-home pay left after all monthly costs",
-      "source": "Sahas's v3 spec draft (family_home_buying_planner_v3_specification.md, section 6). DESIGN.md section 7 says the cutoffs still need to be justified before launch.",
-      "as_of": "2026-10-02",
-      "note": "At or above this share left = Comfortable. PLACEHOLDER: Sahas to confirm or change.",
-      "cite": "placeholder from the v3 spec draft"
+      "source": "Design choice for this app, explained in 'reason' and on the How the numbers work page (DESIGN.md section 7)",
+      "as_of": "2026-10-24",
+      "note": "At or above this share left = Comfortable.",
+      "cite": "this app’s cutoff",
+      "reason": "These cutoffs are this app's own choice, not a lender rule. The label looks at what is left of take-home pay after every monthly bill, including the home (DESIGN.md section 7). Keeping at least 20% left leaves room to save and to absorb a surprise bill; under 10% left means one repair or a short drop in pay could leave the family short. A lender's guideline (housing near 28% of pay before taxes, CFPB) is shown next to it for reference, but it starts from gross pay and ignores the family's other bills, so it isn't used for the label."
     },
     "stretching_below_left_percent": {
       "value": 10,
       "unit": "percent of take-home pay left after all monthly costs",
-      "source": "Sahas's v3 spec draft (family_home_buying_planner_v3_specification.md, section 6). DESIGN.md section 7 says the cutoffs still need to be justified before launch.",
-      "as_of": "2026-10-02",
-      "note": "Below this share left = Stretching. Between the two = Tight. PLACEHOLDER: Sahas to confirm or change.",
-      "cite": "placeholder from the v3 spec draft"
+      "source": "Design choice for this app, explained in 'reason' and on the How the numbers work page (DESIGN.md section 7)",
+      "as_of": "2026-10-24",
+      "note": "Below this share left = Stretching. Between the two = Tight.",
+      "cite": "this app’s cutoff",
+      "reason": "These cutoffs are this app's own choice, not a lender rule. The label looks at what is left of take-home pay after every monthly bill, including the home (DESIGN.md section 7). Keeping at least 20% left leaves room to save and to absorb a surprise bill; under 10% left means one repair or a short drop in pay could leave the family short. A lender's guideline (housing near 28% of pay before taxes, CFPB) is shown next to it for reference, but it starts from gross pay and ignores the family's other bills, so it isn't used for the label."
     },
     "what_if_income_drop_percent": {
       "value": 10,
@@ -135,6 +137,32 @@
       "as_of": "2026-10-01",
       "note": "Design choice, not a statistic.",
       "cite": "DESIGN.md"
+    }
+  },
+  "programs": {
+    "georgia_dream": {
+      "max_sales_price": {
+        "value": 625000,
+        "unit": "dollars",
+        "source": "Georgia DCA, Georgia Dream page: maximum sales price 'Up to $625,000': https://dca.georgia.gov/affordable-housing/home-ownership/georgia-dream",
+        "as_of": "2026-07-08",
+        "note": "The page says 'Program information listed here is effective as of July 8, 2026.'",
+        "cite": "Georgia DCA"
+      },
+      "income_limit_1_2_people": {
+        "value": 137555,
+        "unit": "dollars a year",
+        "source": "Georgia DCA, Georgia Dream page, income limit for 1-2 persons: https://dca.georgia.gov/affordable-housing/home-ownership/georgia-dream",
+        "as_of": "2026-07-08",
+        "cite": "Georgia DCA"
+      },
+      "income_limit_3_plus_people": {
+        "value": 158188,
+        "unit": "dollars a year",
+        "source": "Georgia DCA, Georgia Dream page, income limit for 3 or more persons: https://dca.georgia.gov/affordable-housing/home-ownership/georgia-dream",
+        "as_of": "2026-07-08",
+        "cite": "Georgia DCA"
+      }
     }
   }
 }

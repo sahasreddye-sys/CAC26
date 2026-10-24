@@ -42,20 +42,15 @@ if (typeof module !== 'undefined') module.exports = Model;
 if (typeof document !== 'undefined') (function () {
 
 /* ============================================================
-   Numbers from the v2 notebook run (housing_model_v2.ipynb)
+   Accuracy numbers from the v2 notebook run (housing_model_v2.ipynb),
+   read from data/summary.json through assets/site-data.js
    ============================================================ */
+const SUMMARY = window.MODEL_SUMMARY;
 const NB = {
   forsyth: {
     place: 'Forsyth County', name: 'Forsyth', county: 'Forsyth County', hue: 48,
-    n: 80306, r2: 0.912, mae: 45380, mape: 6.76, medape: 4.42, w10: 81.6, cov: 0.800,
-    bandLo: -0.08859482034256416, bandHi: 0.10414530144086775,
-    tiers: [0.800, 0.876, 0.845, 0.794, 0.685],
-    steps: [
-      { name: 'v1 inputs (with land value)', a: 4.34 },
-      { name: 'minus land value', a: 4.50 },
-      { name: '+ quality and structure type', a: 4.45 },
-      { name: '+ coordinates (final)', a: 4.42 },
-    ],
+    n: SUMMARY.homes, medape: SUMMARY.final['median APE %'],
+    bandLo: SUMMARY.final.band_log_low, bandHi: SUMMARY.final.band_log_high,
   },
 };
 const TAX_YEAR = 2025;
@@ -95,6 +90,9 @@ function fmtShort(v) {
 }
 function fmtPct(v, d = 1) { return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(d) + '%'; }
 function round100(v) { return Math.round(v / 100) * 100; }
+function round1000(v) { return Math.round(v / 1000) * 1000; }
+// one short sentence for screen readers, sent after typing pauses
+function announce(id, text) { clearTimeout(announce[id]); announce[id] = setTimeout(() => { $(id).textContent = text; }, 700); }
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
 function css(name) { return getComputedStyle(document.body).getPropertyValue(name).trim(); }
 function isDark() {
@@ -241,7 +239,8 @@ const map = {
   canvas: $('map'), ctx: null, W: 0, H: 0, dpr: 1, colors: [], fit: 1, hover: -1, active: false,
   cam: { x: 0, y: 0, s: 1 }, springs: null, dragging: null, raf: 0,
 };
-map.ctx = map.canvas.getContext('2d');
+map.ctx = map.canvas.getContext && map.canvas.getContext('2d');
+if (!map.ctx) $('mapSkel').textContent = 'This browser can’t draw the map. The address search and the list of homes still work.';
 
 function rampColor(t, hue, dark) {
   const L = dark ? 0.4 + 0.52 * t : 0.86 - 0.54 * t;
@@ -291,6 +290,7 @@ const toWorld = (sx, sy) => [(sx - map.W / 2) / map.cam.s + map.cam.x, (sy - map
 
 function drawMap() {
   const ctx = map.ctx, d = cur();
+  if (!ctx) return;
   ctx.setTransform(map.dpr, 0, 0, map.dpr, 0, 0);
   ctx.clearRect(0, 0, map.W, map.H);
   if (!d) return;
@@ -455,7 +455,7 @@ function renderSuggest() {
   const ul = $('suggest'), input = $('q'), d = cur();
   if (!input.value.trim() || document.activeElement !== input) { ul.hidden = true; input.setAttribute('aria-expanded', 'false'); return; }
   if (!search.items.length) {
-    ul.innerHTML = input.value.trim().length < 2 ? '' : `<li class="empty" role="option" aria-disabled="true">No ${esc(NB[state.market].name)} address matches “${esc(input.value.trim())}”. Try the house number and street name.</li>`;
+    ul.innerHTML = input.value.trim().length < 2 ? '' : `<li class="empty" role="option" aria-disabled="true">No ${esc(NB[state.market].name)} address matches “${esc(input.value.trim())}”. Try the house number and street name. Homes built or split after the ${TAX_YEAR} tax records aren’t in this data.</li>`;
   } else {
     ul.innerHTML = search.items.map((i, k) => {
       const sub = d.subOf(i);
@@ -597,6 +597,10 @@ function updateEstimate(initial) {
     const gap = Math.abs(sp - cv) / (max - min);
     saleEl.querySelector('span').style.visibility = gap < 0.16 ? 'hidden' : '';
   } else saleEl.hidden = true;
+
+  const likely = PlannerMath.likelySalePrice(est, saleRatio());
+  $('rangeText').textContent = `Model estimate ${fmtUSD(round1000(est))}, 80% likely between ${fmtUSD(round1000(lo))} and ${fmtUSD(round1000(hi))}. County value ${fmtUSD(cv)}.`
+    + (likely !== est ? ` Likely sale price about ${fmtUSD(round1000(likely))}.` : '') + (sp ? ` Last sold for ${fmtUSD(sp)}.` : '');
 
   // comparison
   const diff = (est - cv) / cv * 100;
@@ -861,6 +865,7 @@ function renderVerdict(cost) {
   $('aff-bar-costs').style.width = pct(costs); $('aff-bar-home').style.width = pct(home); $('aff-bar-left').style.width = pct(left);
   $('affBar').setAttribute('aria-label', `Take-home pay: bills and debt ${pct(costs)}, this home ${pct(home)}, left over ${pct(left)}`);
   $('affBarKey').textContent = `Take-home pay ${fmtUSD(takeHome)}: bills and debt ${fmtUSD(costs)} · this home ${fmtUSD(cost.total)} · left ${fmtUSD(takeHome - costs - cost.total)}`;
+  announce('detailAnnounce', `${cur().H.addr[state.sel]}: about ${fmtUSD(cost.total)} a month. ${v.label ? v.label + ', ' : ''}${leftWords(v.left)}.`);
 }
 
 ['affPrice', 'affIns'].forEach(id => $(id).addEventListener('input', renderAfford));
@@ -871,6 +876,76 @@ $('affPrint').addEventListener('click', () => window.print());
 window.addEventListener('budgetchange', () => { if (state.sel >= 0) renderAfford(); });
 
 $('budgetPrint').addEventListener('click', () => window.print());
+
+/* ============================================================
+   How the numbers work (#/method)
+   ============================================================ */
+const tableHTML = (head, rows) => '<thead><tr>' + head.map(h => `<th>${h}</th>`).join('') + '</tr></thead><tbody>'
+  + rows.map(r => '<tr>' + r.map(c => `<td>${c}</td>`).join('') + '</tr>').join('') + '</tbody>';
+const linkSources = src => esc(src).replace(/(https?:\/\/[^\s)]+?)([.,;:]?)(?=\s|$)/g, '<a href="$1" target="_blank" rel="noopener">source ↗</a>$2');
+
+// Every config number the cost math or the labels use, for the method page and the assumptions tables.
+const ASSUMPTION_ROWS = [
+  ['Interest rate (starting value)', 'loan.default_interest_rate', v => v + '%'],
+  ['Loan length (starting value)', 'loan.default_term_years', v => v + ' years'],
+  ['Lowest down payment allowed', 'loan.minimum_down_payment_percent', v => v + '% of price'],
+  ['Likely sale price', 'market.estimate_to_sale_price_ratio', v => `estimate ÷ ${v} (+${Math.round((1 / v - 1) * 100)}%)`],
+  ['Share of value that is taxed', 'property_tax.assessment_ratio', v => (v * 100) + '%'],
+  ['Forsyth tax rate', 'property_tax.millage.forsyth_county', v => v + ' mills'],
+  ['Homestead exemption', 'property_tax.homestead_exemption', v => fmtUSD(v)],
+  ['Home insurance', 'insurance.homeowners_rate_per_1000', v => `$${(+v).toFixed(2)} per $1,000 a year`],
+  ['Mortgage insurance', 'mortgage_insurance.monthly_per_100k', v => `$${v}/mo per $100,000`],
+  ['Mortgage insurance applies under', 'mortgage_insurance.required_below_down_payment_percent', v => v + '% down'],
+  ['Closing costs', 'closing_costs.percent_of_price', v => v + '% of price'],
+  ['Housing guideline (reference only)', 'guidelines.housing_share_of_gross_income', v => v + '% of pay before taxes'],
+  ['Comfortable cutoff', 'comfort.comfortable_min_left_percent', v => v + '% or more left'],
+  ['Stretching cutoff', 'comfort.stretching_below_left_percent', v => 'under ' + v + '% left'],
+];
+function assumptionsHTML(rows = ASSUMPTION_ROWS) {
+  return '<thead><tr><th>What</th><th>Value</th><th>Source</th><th>As of</th></tr></thead><tbody>' + rows.map(([name, path, fmt]) => {
+    const e = plannerSetting(path);
+    return e.value == null
+      ? `<tr><td>${name}</td><td class="unset">not set yet</td><td class="src">${esc(e.note || 'Needs an official source.')}</td><td>—</td></tr>`
+      : `<tr><td>${name}</td><td>${fmt(e.value)}</td><td class="src">${linkSources(e.source)}</td><td>${esc(longDate(e.as_of))}</td></tr>`;
+  }).join('') + '</tbody>';
+}
+
+function renderMethod() {
+  const f = SUMMARY.final, pct = v => (v * 100).toFixed(0) + '%';
+  $('mHomes').textContent = fmtInt(SUMMARY.homes);
+  $('mSteps').innerHTML = tableHTML(['What the model could see', 'Median error', 'Within 10%'],
+    SUMMARY.steps.map(s => [esc(s.inputs), s['median APE %'].toFixed(2) + '%', s['within 10% of county value'].toFixed(1) + '%']));
+  $('mAccuracy').innerHTML = tableHTML(['Measure (against county value)', 'Result'], [
+    ['Half of homes are within', f['median APE %'].toFixed(1) + '% of their county value'],
+    ['Homes within 10% of county value', f['within 10% of county value'].toFixed(1) + '%'],
+    ['Average miss in dollars', fmtUSD(f['MAE $'])],
+    ['Share of county values the model explains (R²)', f.R2.toFixed(3)],
+    ['Homes whose county value falls inside their 80% range', pct(f.band_coverage)],
+  ]);
+  const tiers = Object.entries(f.coverage_by_tier);
+  $('mTiers').innerHTML = tableHTML(['Price tier', 'County value inside the 80% range'],
+    tiers.map(([k, v]) => [esc(k[0].toUpperCase() + k.slice(1)), pct(v)]));
+  const top = tiers[tiers.length - 1][1];
+  $('mWeak').innerHTML = [
+    `The most expensive fifth of homes land inside their range only ${pct(top)} of the time, so treat their ranges as rough.`,
+    'Homes built in the tax year may have been valued partway through construction, so their estimates can come out too low. They are marked “may be partly built”.',
+    'There are no Forsyth sale prices in the open data, so the step from county value to sale price is borrowed from Alpharetta (below).',
+  ].map(s => `<li>${esc(s)}</li>`).join('');
+
+  const ratio = saleRatio();
+  $('mSaleLead').textContent = ratio
+    ? `County values run below what homes sell for. When this project also covered Alpharetta, it compared its estimates with real sales there. In 2025 the estimate was a median ${ratio} of the sale price, so the planner divides each Forsyth estimate by ${ratio} (about +${salePercentAbove()}%). Forsyth has no open sale records yet, so this step is less certain than the estimate itself.`
+    : 'No sale-price adjustment is set, so homes are judged at their estimate.';
+  $('mSales').innerHTML = tableHTML(['Sale year (Alpharetta)', 'Sales used', 'Estimate ÷ sale price (median)', 'County value ÷ sale price (median)'],
+    Object.entries(SUMMARY.sales_check).map(([y, s]) => [y, fmtInt(s['sales used']), s['model estimate / sale price (median)'].toFixed(2), s['county value / sale price (median)'].toFixed(2)]));
+
+  const c1 = plannerSetting('comfort.comfortable_min_left_percent'), c2 = plannerSetting('comfort.stretching_below_left_percent');
+  $('mComfort').textContent = c1.value == null || c2.value == null ? 'The comfort cutoffs are not set yet.'
+    : `The label looks at what is left of take-home pay after every monthly bill, including the home. Comfortable: ${c1.value}% or more left. Tight: between ${c2.value}% and ${c1.value}%. Stretching: under ${c2.value}%.`;
+  $('mComfortWhy').textContent = c1.reason || '';
+  $('costSources').innerHTML = assumptionsHTML();
+}
+renderMethod();
 
 /* ============================================================
    Segmented controls
@@ -995,20 +1070,39 @@ function applyFilters() {
   d.match = list.length === d.n ? null : mask; // null means "nothing filtered out"
   d.matchList = list;
   d.activeSettings = describeSettings(d, f);
-  // if the name search finds homes that the other settings then hide, say so
-  d.hiddenByOthers = 0;
-  if (!list.length && f.words.length && d.activeSettings.length > 1) {
-    const onlyWords = { ...readFiltersBlank(), words: f.words };
-    for (let i = 0; i < d.n; i++) if (homeMatches(d, i, onlyWords)) d.hiddenByOthers++;
-  }
+  d.relax = list.length ? [] : relaxOptions(d, f, useFits);
   state.listShown = 20;
   renderHomeList();
   map.hover = -1; drawMap();
 }
 
-function readFiltersBlank() {
-  return { fits: false, includeTight: false, newOnly: false, fPriceMin: null, fPriceMax: null, fSqftMin: null, fSqftMax: null, fLotMin: null, fYearMin: null,
-    beds: null, baths: null, ES: null, MS: null, HS: null, words: [] };
+// When nothing matches: which single setting, turned off, would bring homes back.
+const RELAXABLE = [
+  { label: 'Fits my budget', on: (f, fits) => fits, off: f => ({ ...f, fits: false }), ids: ['fFits'] },
+  { label: 'Only new homes', on: f => f.newOnly, off: f => ({ ...f, newOnly: false }), ids: ['fNew'] },
+  { label: 'Estimate range', on: f => f.fPriceMin != null || f.fPriceMax != null, off: f => ({ ...f, fPriceMin: null, fPriceMax: null }), ids: ['fPriceMin', 'fPriceMax'] },
+  { label: 'Size', on: f => f.fSqftMin != null || f.fSqftMax != null, off: f => ({ ...f, fSqftMin: null, fSqftMax: null }), ids: ['fSqftMin', 'fSqftMax'] },
+  { label: 'Lot size', on: f => f.fLotMin != null, off: f => ({ ...f, fLotMin: null }), ids: ['fLotMin'] },
+  { label: 'Year built', on: f => f.fYearMin != null, off: f => ({ ...f, fYearMin: null }), ids: ['fYearMin'] },
+  { label: 'Bedrooms', on: f => f.beds != null, off: f => ({ ...f, beds: null }), ids: ['fBeds'] },
+  { label: 'Full baths', on: f => f.baths != null, off: f => ({ ...f, baths: null }), ids: ['fBaths'] },
+  { label: 'School zones', on: f => f.ES != null || f.MS != null || f.HS != null, off: f => ({ ...f, ES: null, MS: null, HS: null }), ids: ['fES', 'fMS', 'fHS'] },
+  { label: 'Subdivision or street', on: f => f.words.length > 0, off: f => ({ ...f, words: [] }), ids: ['fText'] },
+];
+function relaxOptions(d, f, useFits) {
+  const out = [];
+  RELAXABLE.forEach((r, k) => {
+    if (!r.on(f, useFits)) return;
+    const g = r.off(f), fits = k === 0 ? false : useFits;
+    let n = 0;
+    for (let i = 0; i < d.n; i++) {
+      if (!homeMatches(d, i, g)) continue;
+      if (fits) { const fit = homeFitLabel(d, i); if (!fit.cashOk || !(fit.label === 'Comfortable' || (g.includeTight && fit.label === 'Tight'))) continue; }
+      n++;
+    }
+    if (n) out.push({ k, n });
+  });
+  return out.sort((a, b) => b.n - a.n).slice(0, 3);
 }
 
 // Plain-words list of the settings that are on, shown above the list.
@@ -1068,9 +1162,9 @@ function renderHomeList() {
       if (fit.cost != null) note = `<small class="r">≈ ${fmtUSD(fit.cost)}/mo at ${fmtShort(startingPrice(d, i))}${fit.label ? ` · <span class="fit ${fit.label}">${fit.label}</span>` : ''}${fit.cashOk ? '' : ' · <span class="fit Stretching">needs more savings</span>'}${mayBePartlyBuilt(d, i) ? ' · <span class="partial">may be partly built</span>' : ''}</small>`;
     }
     return `<li><button type="button" data-i="${i}"><span class="a">${esc(H.addr[i] || H.id[i])}</span><span class="v">${fmtShort(lo)}–${fmtShort(hi)}</span><small>${esc(bits)}</small>${note}</button></li>`;
-  }).join('') || (d.hiddenByOthers
-    ? `<li class="empty">${fmtInt(d.hiddenByOthers)} homes match “${esc($('fText').value.trim())}”, but your other settings hide them. Loosen one of them, or press Reset.</li>`
-    : '<li class="empty">No homes match these settings. Try loosening one, or press Reset.</li>');
+  }).join('') || `<li class="empty">No homes match these settings.${(d.relax || []).length
+    ? ' ' + d.relax.map(r => `<button class="linkish" type="button" data-relax="${r.k}">Turn off “${RELAXABLE[r.k].label}”</button> (${fmtInt(r.n)} homes)`).join(' · ')
+    : ' Press Reset to start over.'}</li>`;
   $('listMore').hidden = rows.length >= list.length;
   $('listMoreCount').textContent = list.length ? `Showing ${fmtInt(rows.length)} of ${fmtInt(list.length)}` : '';
 }
@@ -1087,7 +1181,14 @@ $('fReset').addEventListener('click', () => {
   $('filters').querySelectorAll('input, select').forEach(el => { if (el.type === 'checkbox') el.checked = false; else el.value = ''; });
   applyFilters();
 });
-$('homeList').addEventListener('click', e => { const b = e.target.closest('button[data-i]'); if (b) selectHome(+b.dataset.i, { from: 'list' }); });
+$('homeList').addEventListener('click', e => {
+  const relax = e.target.closest('button[data-relax]');
+  if (relax) {
+    for (const id of RELAXABLE[+relax.dataset.relax].ids) { const el = $(id); if (el.type === 'checkbox') el.checked = false; else el.value = ''; }
+    applyFilters(); return;
+  }
+  const b = e.target.closest('button[data-i]'); if (b) selectHome(+b.dataset.i, { from: 'list' });
+});
 $('listMore').addEventListener('click', () => { state.listShown += 20; renderHomeList(); });
 initSeg($('listSort'), b => { state.listSort = b.dataset.sort; state.listSortPicked = true; state.listShown = 20; renderHomeList(); });
 
@@ -1121,20 +1222,29 @@ async function setMarket(market, selectId) {
   $('q').value = ''; search.items = []; renderSuggest();
   if (currentScreen === 'homes') history.replaceState(null, '', '#/homes/' + market);
 
+  $('retryLoad').hidden = true;
   if (!state.data[market]) {
-    $('q').disabled = true; $('tryRow').hidden = true; $('legend').hidden = true;
-    $('mapSkel').hidden = false; map.ctx.clearRect(0, 0, map.canvas.width, map.canvas.height);
+    $('q').disabled = true; $('q').placeholder = 'Loading addresses…'; $('tryRow').hidden = true; $('legend').hidden = true;
+    if (map.ctx) $('mapSkel').textContent = 'Loading map…';
+    $('mapSkel').hidden = false; if (map.ctx) map.ctx.clearRect(0, 0, map.canvas.width, map.canvas.height);
     setStatus(`Loading ${fmtInt(nb.n)} ${nb.name} homes…`);
   }
   let d;
   try { d = await loadMarket(market); }
   catch (err) {
     console.error(err);
-    setStatus('Couldn’t load the home data. If you opened this file directly, serve the folder over HTTP; GitHub Pages does this for you.', true);
+    $('q').placeholder = 'Addresses didn’t load';
+    $('mapSkel').textContent = 'The map didn’t load.';
+    setStatus(location.protocol === 'file:'
+      ? 'Couldn’t load the home data. Browsers block it when this file is opened from the disk; open the live site, or run python -m http.server in this folder.'
+      : 'Couldn’t load the home data. Check your connection and try again.', true);
+    $('retryLoad').hidden = false;
+    $('retryLoad').onclick = () => setMarket(market, selectId);
     return;
   }
   if (state.market !== market) return; // the user switched again while this loaded
-  $('mapSkel').hidden = true; $('legend').hidden = false; $('q').disabled = false;
+  $('mapSkel').hidden = !!map.ctx; $('legend').hidden = !map.ctx; $('q').disabled = false;
+  $('homeCount').textContent = fmtInt(d.n);
   setStatus('');
   buildRamp(); sizeMap(); resetCam(false); renderTry(); renderStats(d);
   setupFilters(d); applyFilters();

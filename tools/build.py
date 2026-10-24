@@ -51,7 +51,6 @@ def asset_version(site_data):
 
 def stamped_index(version):
     html = INDEX.read_text()
-    html = re.sub(r"const ASSET_VERSION = '[^']*';", f"const ASSET_VERSION = '{version}';", html)
     return re.sub(r'(src="assets/[\w-]+\.js)\?v=[^"]*"', rf'\1?v={version}"', html)
 
 

@@ -211,6 +211,8 @@ function prepare(market, raw) {
     d.bucket[i] = Math.max(0, Math.min(RAMP_STEPS - 1, Math.round(t * (RAMP_STEPS - 1))));
   }
   d.order = Array.from({ length: n }, (_, i) => i).filter(i => d.has[i]).sort((a, b) => H.est[a] - H.est[b]);
+  d.rankOf = new Int32Array(n).fill(-1);
+  d.order.forEach((i, k) => { d.rankOf[i] = k; });
 
   // spatial grid for hover, clicks and nearby homes
   const span = Math.max(d.bounds.x1 - d.bounds.x0, d.bounds.y1 - d.bounds.y0);
@@ -671,8 +673,35 @@ function featValue(d, f, i) {
     default: return String(v);
   }
 }
+// One plain sentence from the two biggest reasons, pointing the same way as the estimate.
+function driverSentence(d, i) {
+  const drv = d.H.drv[i], higher = d.H.est[i] >= d.vMid;
+  const name = k => (LABELS[d.model.features[k]] || d.model.features[k]).toLowerCase();
+  const same = drv.filter(([, pct]) => higher ? pct > 0 : pct < 0).slice(0, 2).map(([k]) => name(k));
+  if (!same.length) return '';
+  return `The estimate is ${higher ? 'higher' : 'lower'} than the typical Forsyth home (${fmtShort(d.vMid)}) mostly because of its ${same.join(' and ')}.`;
+}
+
+// "How sure we are" (DESIGN.md 5.3, part 5): the tested range for homes in the same price tier
+function renderHowSure(d, i) {
+  const tiers = Object.entries(SUMMARY.final.coverage_by_tier);
+  const rank = d.rankOf ? d.rankOf[i] : -1;
+  const lines = [];
+  if (rank >= 0) {
+    const t = Math.min(tiers.length - 1, Math.floor(rank / d.order.length * tiers.length));
+    const [tierName, cover] = tiers[t];
+    lines.push(`<b>How sure we are:</b> this home is in the ${esc(tierName)} of Forsyth estimates. When tested, ${Math.round(cover * 100)}% of homes in that group had their county value inside their 80% range.`);
+    if (cover < 0.75) lines.push('That is lower than for most homes, so treat this range as rough.');
+  }
+  if (mayBePartlyBuilt(d, i)) lines.push(`Built ${d.H.yr[i]}: the county may have valued it while it was still being built, so the estimate can be too low.`);
+  if (!d.H.sqft[i]) lines.push('The county record has no building size, which makes the estimate less reliable.');
+  $('rSure').innerHTML = lines.map(l => `<p>${l}</p>`).join('');
+}
+
 function renderDrivers() {
   const d = cur(), i = state.sel;
+  $('rWhy').textContent = driverSentence(d, i);
+  renderHowSure(d, i);
   const drv = d.H.drv[i];
   const maxAbs = Math.max(6, ...drv.map(x => Math.abs(x[1])));
   $('rDrivers').innerHTML = drv.map(([k, pct]) => {

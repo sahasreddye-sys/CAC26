@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Forsyth MarketMap</title>
 <meta name="description" content="Forsyth MarketMap: a home-buying worksheet for Forsyth County, Georgia families. Start from your monthly budget and see what a home would really cost each month.">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f8f9ff" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#18191b" media="(prefers-color-scheme: dark)">
@@ -45,7 +46,7 @@
 
   --up: #1e6b52;
   /* type scale: six sizes */
-  --fs-xs: 12px; --fs-sm: 14px; --fs-md: 16px; --fs-lg: 20px; --fs-xl: 28px; --fs-2xl: 48px;
+  --fs-xs: .75rem; --fs-sm: .875rem; --fs-md: 1rem; --fs-lg: 1.25rem; --fs-xl: 1.75rem; --fs-2xl: 3rem; /* 12 14 16 20 28 48 px; rem so a larger text setting scales them */
   /* spacing scale */
   --sp-4: 4px; --sp-8: 8px; --sp-12: 12px; --sp-16: 16px; --sp-24: 24px; --sp-32: 32px; --sp-48: 48px; --sp-64: 64px;
   --sans: "Work Sans", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -87,12 +88,12 @@ button { font: inherit; color: inherit; }
 
 /* ---------- app header ---------- */
 .mast { position: sticky; top: 0; z-index: var(--z-sticky); background: var(--surface); box-shadow: 0 1px 8px rgba(0,0,0,.04); }
-.mast-in { max-width: 1200px; margin: 0 auto; height: 72px; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); }
+.mast-in { max-width: 1200px; margin: 0 auto; min-height: 72px; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; gap: var(--sp-8); }
 .app-id { display: flex; align-items: center; gap: var(--sp-12); min-width: 0; text-decoration: none; }
 .app-mark { width: 34px; height: 34px; display: block; color: var(--primary); flex-shrink: 0; }
 .app-text { min-width: 0; }
-.app-name { display: block; font-size: var(--fs-md); font-weight: 600; line-height: 22px; letter-spacing: -.005em; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.app-sub { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; font-size: var(--fs-xs); line-height: 14px; }
+.app-name { display: block; font-size: var(--fs-md); font-weight: 600; line-height: 1.35; letter-spacing: -.005em; color: var(--primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-sub { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; font-size: var(--fs-xs); line-height: 1.35; }
 .app-sub .caps { font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--outline); white-space: nowrap; }
 .app-sub .sep { color: var(--outline-variant); }
 .app-sub #screenName { font-size: var(--fs-xs); color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -101,11 +102,11 @@ button { font: inherit; color: inherit; }
 .round-btn:active { transform: scale(.95); }
 
 .dock { position: fixed; left: 0; right: 0; bottom: 0; z-index: var(--z-sticky); background: var(--surface); box-shadow: 0 -1px 8px rgba(0,0,0,.04); padding-bottom: env(safe-area-inset-bottom, 0px); }
-.dock-note { margin: 0; padding: var(--sp-4) var(--sp-16); text-align: center; font-size: var(--fs-xs); line-height: 16px; letter-spacing: -.01em; color: var(--outline); background: var(--surface-low); }
+.dock-note { margin: 0; padding: var(--sp-4) var(--sp-16); text-align: center; font-size: var(--fs-xs); line-height: 1.35; letter-spacing: -.01em; color: var(--outline); background: var(--surface-low); }
 .tabs { max-width: 840px; margin: 0 auto; display: flex; justify-content: space-around; padding: var(--sp-4); }
 .tabs a { flex: 1; min-height: 44px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: var(--sp-4); text-decoration: none; color: var(--on-surface-variant); transition: color .15s; }
 .tabs a:hover { color: var(--on-surface); }
-.tabs a span:last-child { margin-top: var(--sp-4); font-size: var(--fs-xs); line-height: 14px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
+.tabs a span:last-child { margin-top: var(--sp-4); font-size: var(--fs-xs); line-height: 1.35; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; }
 .tabs a[aria-current="page"] { color: var(--primary); }
 .tabs a[aria-current="page"] .ms { stroke-width: 2.4; }
 
@@ -371,7 +372,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 .aff-box input { width: 100%; min-width: 0; height: 34px; padding: 0 var(--sp-8); border: 1px solid var(--outline-variant); border-radius: 4px; background: var(--surface-lowest); color: var(--on-surface); font: 600 var(--fs-md) var(--sans); font-variant-numeric: tabular-nums; }
 .aff-box input:focus { outline: none; border-color: var(--on-surface); }
 .aff-box input.invalid { border-color: var(--error); }
-.aff-field small { font-size: var(--fs-xs); line-height: 16px; color: var(--outline); }
+.aff-field small { font-size: var(--fs-xs); line-height: 1.35; color: var(--outline); }
 .aff-interest { margin: var(--sp-12) 0 var(--sp-4); font-size: var(--fs-sm); }
 .amort { margin: var(--sp-8) 0 var(--sp-12); font-size: var(--fs-sm); }
 .amort summary { cursor: pointer; color: var(--on-surface-variant); }
@@ -387,6 +388,10 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 .compare-table th { color: var(--on-surface); font-weight: 600; }
 .compare-table td:first-child, .compare-table th:first-child { color: var(--on-surface-variant); font-weight: 400; width: 26%; }
 .compare-table .linkish { font-size: var(--fs-xs); font-weight: 400; }
+.drv-why { margin: var(--sp-8) 0 var(--sp-4); font-size: var(--fs-sm); }
+.how-sure { margin-top: var(--sp-12); padding: var(--sp-8) var(--sp-12); border-left: 2px solid var(--outline); background: var(--surface-low); font-size: var(--fs-sm); }
+.how-sure p + p { margin-top: var(--sp-4); }
+.how-sure b { font-weight: 600; }
 .aff-check { margin: var(--sp-16) 0 0; font-size: var(--fs-sm); line-height: 1.5; }
 .aff-table { margin-top: var(--sp-12); }
 .aff-table td { padding: var(--sp-8) 0 var(--sp-8) var(--sp-16); }
@@ -437,21 +442,21 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
   .screen.budget > .notice { grid-column: 1 / -1; }
   .budget-side { position: sticky; top: 88px; }
 }
-.t-hsm { font-size: var(--fs-md); line-height: 22px; font-weight: 600; letter-spacing: -.005em; }
-.t-bsm { font-size: var(--fs-xs); line-height: 16px; letter-spacing: .01em; color: var(--on-surface-variant); }
-.t-label { font-size: var(--fs-xs); line-height: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--on-surface-variant); }
+.t-hsm { font-size: var(--fs-md); line-height: 1.35; font-weight: 600; letter-spacing: -.005em; }
+.t-bsm { font-size: var(--fs-xs); line-height: 1.35; letter-spacing: .01em; color: var(--on-surface-variant); }
+.t-label { font-size: var(--fs-xs); line-height: 1.35; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--on-surface-variant); }
 .notice { background: var(--surface-low); border-radius: 8px; padding: var(--sp-12); box-shadow: var(--shadow-sm); }
 .notice-top { display: flex; justify-content: space-between; align-items: flex-start; gap: var(--sp-8); }
 .notice-main { display: flex; gap: var(--sp-8); align-items: flex-start; }
 .notice-main .ms { color: var(--primary); margin-top: 2px; }
 .notice-main .t-bsm { margin-top: 2px; }
-.btn-clear { flex-shrink: 0; border: 0; border-radius: 4px; padding: var(--sp-4) var(--sp-8); background: var(--surface-container); color: var(--secondary); font-size: var(--fs-xs); line-height: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: background-color .15s, transform .1s; }
+.btn-clear { flex-shrink: 0; border: 0; border-radius: 4px; padding: var(--sp-4) var(--sp-8); background: var(--surface-container); color: var(--secondary); font-size: var(--fs-xs); line-height: 1.35; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; cursor: pointer; transition: background-color .15s, transform .1s; }
 .btn-clear:hover { background: var(--surface-highest); }
 .btn-clear:active { transform: scale(.95); }
-.notice-step { display: flex; align-items: center; gap: var(--sp-4); margin-top: var(--sp-8); padding-top: var(--sp-4); color: var(--primary); font-size: var(--fs-xs); line-height: 16px; font-weight: 500; }
+.notice-step { display: flex; align-items: center; gap: var(--sp-4); margin-top: var(--sp-8); padding-top: var(--sp-4); color: var(--primary); font-size: var(--fs-xs); line-height: 1.35; font-weight: 500; }
 .notice-step .ms { font-size: var(--fs-md); }
 .clear-note { margin-left: auto; color: var(--on-surface-variant); font-weight: 400; }
-.example-note { margin-top: var(--sp-8); font-size: var(--fs-xs); line-height: 16px; color: var(--secondary); }
+.example-note { margin-top: var(--sp-8); font-size: var(--fs-xs); line-height: 1.35; color: var(--secondary); }
 .example-note[hidden] { display: none; }
 .notice-step .linkish { color: inherit; font-weight: 600; }
 .sec-act { font-weight: 400; font-size: var(--fs-sm); }
@@ -465,14 +470,14 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 .cutoff { color: var(--primary); text-align: right; white-space: nowrap; }
 #budgetForm { display: flex; flex-direction: column; gap: var(--sp-8); margin: 0; }
 .money-row { background: var(--surface-low); border-radius: 4px; padding: var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-4); transition: background-color .15s; }
-.money-row:focus-within { background: var(--surface-container); }
+.money-row:focus-within { background: var(--surface-container); box-shadow: inset 0 0 0 2px var(--primary); }
 .money-label { display: flex; justify-content: space-between; align-items: baseline; gap: var(--sp-8); }
-.money-label label { font-size: var(--fs-md); line-height: 22px; font-weight: 600; letter-spacing: -.005em; }
-.money-label .hint { font-size: var(--fs-xs); line-height: 16px; color: var(--outline); text-align: right; }
+.money-label label { font-size: var(--fs-md); line-height: 1.35; font-weight: 600; letter-spacing: -.005em; }
+.money-label .hint { font-size: var(--fs-xs); line-height: 1.35; color: var(--outline); text-align: right; }
 .money-input { display: flex; justify-content: space-between; align-items: center; gap: var(--sp-8); margin-top: 2px; }
 .amt { display: flex; align-items: baseline; gap: var(--sp-4); min-width: 0; }
 .amt .cur { font-size: var(--fs-sm); font-weight: 500; color: var(--on-surface-variant); }
-.amt input { width: 9ch; min-width: 0; border: 0; padding: 0; background: transparent; font: 600 var(--fs-lg)/26px var(--sans); letter-spacing: -.01em; color: var(--on-surface); font-variant-numeric: tabular-nums; outline: none; }
+.amt input { width: 9ch; min-width: 0; border: 0; padding: 0; background: transparent; font: 600 var(--fs-lg)/1.3 var(--sans); letter-spacing: -.01em; color: var(--on-surface); font-variant-numeric: tabular-nums; outline: none; }
 .amt input::placeholder { color: var(--outline-variant); }
 .money-row.primary-row .amt input { color: var(--primary); }
 .amt .per { font-size: var(--fs-xs); color: var(--outline); white-space: nowrap; }
@@ -481,7 +486,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 .steppers button:hover { background: var(--surface-high); }
 .steppers button:active { background: var(--primary); color: var(--on-primary); }
 .money-row.invalid { box-shadow: inset 0 0 0 1.5px var(--error); }
-.err { margin: 0; font-size: var(--fs-xs); line-height: 16px; color: var(--error); }
+.err { margin: 0; font-size: var(--fs-xs); line-height: 1.35; color: var(--error); }
 .err:empty { display: none; }
 .sub-label { margin: var(--sp-8) 0 0; }
 .loan-row { background: var(--surface-container); border-radius: 4px; padding: var(--sp-8); display: flex; flex-direction: column; gap: var(--sp-4); color: var(--on-surface-variant); }
@@ -490,7 +495,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 .loan-label .ms { font-size: var(--fs-md); color: var(--primary); }
 .loan-fields { display: flex; gap: var(--sp-8); }
 .mini { display: flex; align-items: center; gap: var(--sp-4); background: var(--surface-lowest); border-radius: 4px; padding: var(--sp-4) var(--sp-8); font-size: var(--fs-xs); }
-.mini input { width: 5ch; border: 0; padding: 0; background: transparent; font: 600 var(--fs-sm)/20px var(--sans); color: var(--on-surface); text-align: right; font-variant-numeric: tabular-nums; outline: none; }
+.mini input { width: 5ch; border: 0; padding: 0; background: transparent; font: 600 var(--fs-sm)/1.3 var(--sans); color: var(--on-surface); text-align: right; font-variant-numeric: tabular-nums; outline: none; }
 .mini:focus-within { box-shadow: inset 0 0 0 1.5px var(--on-surface); }
 .mini.invalid { box-shadow: inset 0 0 0 1.5px var(--error); }
 .loan-row .src { color: var(--on-surface-variant); }
@@ -511,8 +516,8 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 .legend3 .cell.soft .t-label, .legend3 .cell.soft b { color: var(--on-primary-fixed-variant); }
 .legend3 .t-label { display: flex; align-items: center; justify-content: center; gap: var(--sp-4); white-space: nowrap; overflow: hidden; }
 .legend3 i { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-.legend3 b { font-size: var(--fs-sm); line-height: 20px; font-weight: 600; margin-top: 2px; }
-.narrative { margin: 0; display: flex; gap: var(--sp-8); align-items: flex-start; background: var(--surface-low); border-radius: 4px; padding: var(--sp-8); font-size: var(--fs-xs); line-height: 16px; }
+.legend3 b { font-size: var(--fs-sm); line-height: 1.35; font-weight: 600; margin-top: 2px; }
+.narrative { margin: 0; display: flex; gap: var(--sp-8); align-items: flex-start; background: var(--surface-low); border-radius: 4px; padding: var(--sp-8); font-size: var(--fs-xs); line-height: 1.35; }
 .narrative[hidden] { display: none; }
 .narrative .ms { color: var(--primary); flex-shrink: 0; }
 .narrative strong { color: var(--primary); font-weight: 600; }
@@ -521,7 +526,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 .lr[hidden] { display: none; }
 .lr.mid { background: var(--surface-container); color: var(--on-surface); font-weight: 500; }
 .lr.deep { background: var(--surface-high); color: var(--on-surface); font-weight: 500; }
-.lr small { display: block; font-size: var(--fs-xs); line-height: 16px; font-weight: 400; color: var(--outline); }
+.lr small { display: block; font-size: var(--fs-xs); line-height: 1.35; font-weight: 400; color: var(--outline); }
 .lr b { font-size: var(--fs-sm); font-weight: 600; color: var(--on-surface); white-space: nowrap; text-align: right; }
 .lr b.big { font-size: var(--fs-md); color: var(--primary); }
 .lr b.muted { color: var(--outline); font-weight: 500; }
@@ -625,7 +630,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
         </div>
         <div class="info-part" id="privacy">
       <h4 class="info-h">Privacy</h4>
-      <p class="lead" id="mPrivacy">Nothing you type is sent anywhere or saved. Refreshing or closing the page clears it. There are no accounts, cookies, or analytics.</p>
+      <p class="lead" id="mPrivacy">Nothing you type is sent anywhere or saved. Refreshing or closing the page clears it. There are no accounts, cookies, or analytics. The page loads its files (including fonts and icons) only from this site, and its security policy blocks requests to anywhere else. Links you choose to click, like the county record, open other sites.</p>
         </div>
         <div class="info-part" id="limits">
       <h4 class="info-h">What it can’t do</h4>
@@ -788,14 +793,14 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
           <div class="fbox"><span class="t-label">Size (sq ft)</span><span class="pair"><input type="text" id="fSqftMin" inputmode="numeric" placeholder="Min" aria-label="Smallest size in square feet"><span>to</span><input type="text" id="fSqftMax" inputmode="numeric" placeholder="Max" aria-label="Largest size in square feet"></span></div>
           <div class="fbox"><span class="t-label">Lot (acres)</span><input type="text" id="fLotMin" inputmode="decimal" placeholder="At least" aria-label="Smallest lot in acres"></div>
           <div class="fbox"><span class="t-label">Built in or after</span><input type="text" id="fYearMin" inputmode="numeric" placeholder="Any year" aria-label="Built in or after this year"></div>
-          <div class="fbox" data-needs="beds"><span class="t-label">Bedrooms</span><select id="fBeds"><option value="">Any</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
-          <div class="fbox" data-needs="baths"><span class="t-label">Full baths</span><select id="fBaths"><option value="">Any</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
+          <div class="fbox" data-needs="beds"><label class="t-label" for="fBeds">Bedrooms</label><select id="fBeds"><option value="">Any</option><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option></select></div>
+          <div class="fbox" data-needs="baths"><label class="t-label" for="fBaths">Full baths</label><select id="fBaths"><option value="">Any</option><option>1</option><option>2</option><option>3</option><option>4</option></select></div>
         </div>
         <p class="t-label sub-label">Location</p>
         <div class="fgrid">
-          <div class="fbox" data-needs="schools"><span class="t-label">Elementary</span><select id="fES"></select></div>
-          <div class="fbox" data-needs="schools"><span class="t-label">Middle</span><select id="fMS"></select></div>
-          <div class="fbox" data-needs="schools"><span class="t-label">High</span><select id="fHS"></select></div>
+          <div class="fbox" data-needs="schools"><label class="t-label" for="fES">Elementary</label><select id="fES"></select></div>
+          <div class="fbox" data-needs="schools"><label class="t-label" for="fMS">Middle</label><select id="fMS"></select></div>
+          <div class="fbox" data-needs="schools"><label class="t-label" for="fHS">High</label><select id="fHS"></select></div>
           <div class="fbox wide"><span class="t-label">Subdivision or street</span><input id="fText" type="search" placeholder="e.g. Longstreet" aria-label="Subdivision or street name"></div>
         </div>
         <p class="t-bsm" id="fNote"></p>
@@ -968,6 +973,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
             <div class="mark est" id="rvEst"><span></span></div>
           </div>
           <p class="scale-note">The shaded span is the 80% range. <button class="linkish" type="button" aria-expanded="false" aria-controls="info-estimate">How accurate is this?</button></p>
+          <div class="how-sure" id="rSure"></div>
           <div class="info-pop" id="info-estimate" hidden>
         <div class="info-part" id="model">
       <h4 class="info-h">How the estimate is built</h4>
@@ -986,6 +992,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
           <p class="sr" id="rangeText"></p>
 
           <h3 class="sec">What pushed the estimate <small>vs. the average home here</small></h3>
+          <p class="drv-why" id="rWhy"></p>
           <div id="rDrivers"></div>
           <p class="fine">Per-home LightGBM feature contributions, converted from log value to percent. The four largest are shown.</p>
           <h3 class="sec">Nearest homes</h3>
@@ -1031,11 +1038,10 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 </div>
 
 <!-- python tools/build.py writes these version numbers; don't edit them by hand. -->
-<script>const ASSET_VERSION = '4ba1e8907a';</script>
-<script src="assets/site-data.js?v=4ba1e8907a"></script>
-<script src="assets/planner-math.js?v=4ba1e8907a"></script>
-<script src="assets/budget-worksheet.js?v=4ba1e8907a"></script>
-<script src="assets/screens.js?v=4ba1e8907a"></script>
-<script src="assets/app.js?v=4ba1e8907a"></script>
+<script src="assets/site-data.js?v=40dc94ef81"></script>
+<script src="assets/planner-math.js?v=40dc94ef81"></script>
+<script src="assets/budget-worksheet.js?v=40dc94ef81"></script>
+<script src="assets/screens.js?v=40dc94ef81"></script>
+<script src="assets/app.js?v=40dc94ef81"></script>
 </body>
 </html>

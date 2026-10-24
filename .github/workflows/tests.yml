@@ -12,5 +12,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Budget math tests
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Budget math, config and data tests
         run: node --test
+      - name: HTML is valid (rules in .htmlvalidate.json)
+        run: npx --yes html-validate@8 index.html

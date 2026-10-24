@@ -50,3 +50,13 @@ test('address search ignores case and punctuation and matches street word forms'
   assert.equal(n('966 Firethorne  Road'), '966 firethorne rd');
   assert.equal(n("St. Andrew's Court"), 'st andrews ct');
 });
+
+test('an income drop can move a home from comfortable to stretching', () => {
+  // $8,200 take-home, $3,750 of bills, $2,800 for the home: $1,650 left (about 20%)
+  const full = PlannerMath.leftAfterHousingPercent(8200, 650, 3100, 2800);
+  assert.equal(PlannerMath.comfortLabel(full, 20, 10), 'Comfortable');
+  // 25% less take-home pay ($6,150): $400 short, so stretching
+  const dropped = PlannerMath.leftAfterHousingPercent(8200 * 0.75, 650, 3100, 2800);
+  assert.ok(dropped < 0);
+  assert.equal(PlannerMath.comfortLabel(dropped, 20, 10), 'Stretching');
+});

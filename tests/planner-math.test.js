@@ -42,3 +42,11 @@ test('guideline amount is a share of gross income, or null if unknown', () => {
   assert.equal(PlannerMath.guidelineHousingAmount(null, 28), null);
   assert.equal(PlannerMath.guidelineHousingAmount(10000, null), null);
 });
+
+test('address search ignores case and punctuation and matches street word forms', () => {
+  const n = PlannerMath.normalizeAddress;
+  assert.equal(n('5310 Berkshire Passage Way.'), n('5310 berkshire passage way'));
+  assert.equal(n('120 White Pines Drive'), n('120 WHITE PINES DR'));
+  assert.equal(n('966 Firethorne  Road'), '966 firethorne rd');
+  assert.equal(n("St. Andrew's Court"), 'st andrews ct');
+});

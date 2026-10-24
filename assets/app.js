@@ -182,6 +182,7 @@ function prepare(market, raw) {
   const lowMul = Math.exp(nb.bandLo), highMul = Math.exp(nb.bandHi);
   const d = { market, H, X, model, n, lowMul, highMul };
   d.lower = H.addr.map(a => a.toLowerCase());
+  d.searchable = H.addr.map(PlannerMath.normalizeAddress);
   d.subOf = i => H.sub ? H.sub.v[H.sub.i[i]] : '';
   d.nbrOf = i => H.nbr ? H.nbr.v[H.nbr.i[i]] : '';
   d.useOf = i => H.use ? H.use.v[H.use.i[i]] : '';
@@ -477,11 +478,11 @@ function flyTo(i) {
 const search = { items: [], active: -1 };
 function runSearch(q) {
   const d = cur(); if (!d) return [];
-  q = q.trim().toLowerCase().replace(/\s+/g, ' ');
+  q = PlannerMath.normalizeAddress(q);
   if (q.length < 2) return [];
   const starts = [], contains = [];
   for (let i = 0; i < d.n; i++) {
-    const a = d.lower[i];
+    const a = d.searchable[i];
     if (a.startsWith(q)) { starts.push(i); if (starts.length >= 8) break; }
     else if (contains.length < 8 && a.includes(q)) contains.push(i);
   }
@@ -1000,6 +1001,37 @@ $('affDownPct').addEventListener('input', () => {
 });
 $('affAmortWrap').addEventListener('toggle', renderAfford);
 $('affPrint').addEventListener('click', () => window.print());
+
+// The printed worksheet: the budget, the home being looked at (if any), the
+// assumptions with sources, and the disclaimers. Built right before printing.
+function buildPrintSheet() {
+  const b = familyBudget, byId = $;
+  const withHome = currentScreen === 'detail' && state.sel >= 0;
+  const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
+  const money = v => v == null ? '—' : fmtUSD(v);
+  let html = `<h1>Forsyth MarketMap: home budget worksheet</h1><p>Printed ${esc(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }))}</p>`;
+  html += '<div class="print-cols"><div><h2>Budget, each month</h2><table><tbody>' + row('Take-home pay', money(b.takeHome)) + row('Debt payments', money(b.debts))
+    + row('Other regular costs', money(b.otherCosts)) + row('Savings for buying', money(b.savings))
+    + row('Loan', `${homeCostSettings('forsyth').ratePercent ?? '—'}% for ${homeCostSettings('forsyth').termYears ?? '—'} years`)
+    + row('Housing that leaves you comfortable', esc(byId('r-comfortLimit').textContent))
+    + row('Price you could carry', esc(byId('r-maxPrice').textContent)) + '</tbody></table>'
+    + `<p>${byId('r-headline').innerHTML}</p></div>`;
+  if (withHome) {
+    html += `<div><h2>${esc(byId('rAddr').textContent)}</h2><p>${esc(byId('rParcel').textContent)} · checked at $${esc(byId('affPrice').value)}</p>`
+      + `<table>${byId('affTable').innerHTML.replace(/<small>.*?<\/small>/g, '').replace(/<tr><td>HOA dues<\/td><td>\$0<\/td><\/tr>/, '')}</table>`
+      + `<p>${byId('affVerdict').innerHTML}</p><p>${esc(byId('affWhatIfNote').textContent)}</p>`
+      + `<p>${byId('affInterest').innerHTML}</p>`
+      + `<table><tbody>${[...byId('affCash').querySelectorAll('div')].map(d => {
+        const dd = d.querySelector('dd'), note = dd.querySelector('small');
+        return row(esc(d.querySelector('dt').textContent) + (note ? `<small>${esc(note.textContent)}</small>` : ''), esc(dd.firstChild.textContent));
+      }).join('')}</tbody></table></div>`;
+  }
+  html += '</div>';
+  html += `<h2>Numbers the planner used, with sources</h2><table>${assumptionsHTML(ASSUMPTION_ROWS, true)}</table>`;
+  html += '<p class="fineprint">Planning tool only. Not financial advice, a loan offer, or an appraisal. Home estimates follow the county’s 2025 assessed values, not sale prices. Nothing typed into the planner is sent anywhere or saved. https://sahasreddye-sys.github.io/CAC26/</p>';
+  $('printSheet').innerHTML = html;
+}
+window.addEventListener('beforeprint', buildPrintSheet);
 window.addEventListener('budgetchange', () => { if (state.sel >= 0) renderAfford(); });
 
 $('budgetPrint').addEventListener('click', () => window.print());
@@ -1028,7 +1060,16 @@ const ASSUMPTION_ROWS = [
   ['Comfortable cutoff', 'comfort.comfortable_min_left_percent', v => v + '% or more left'],
   ['Stretching cutoff', 'comfort.stretching_below_left_percent', v => 'under ' + v + '% left'],
 ];
-function assumptionsHTML(rows = ASSUMPTION_ROWS) {
+// short: name the source and its website instead of quoting it (the printed page)
+function assumptionsHTML(rows = ASSUMPTION_ROWS, short = false) {
+  if (short) {
+    return '<thead><tr><th scope="col">What</th><th scope="col">Value</th><th scope="col">Source, as of</th></tr></thead><tbody>' + rows.map(([name, path, fmt]) => {
+      const e = plannerSetting(path);
+      const site = (String(e.source).match(/https?:\/\/([^/\s]+)/) || [])[1];
+      return e.value == null ? `<tr><td>${name}</td><td>not set yet</td><td>needs an official source</td></tr>`
+        : `<tr><td>${name}</td><td>${fmt(e.value)}</td><td>${esc([e.cite, site, fmtDate(e.as_of) || e.as_of].filter(Boolean).join(', '))}</td></tr>`;
+    }).join('') + '</tbody>';
+  }
   return '<thead><tr><th scope="col">What</th><th scope="col">Value</th><th scope="col">Source</th><th scope="col">As of</th></tr></thead><tbody>' + rows.map(([name, path, fmt]) => {
     const e = plannerSetting(path);
     return e.value == null

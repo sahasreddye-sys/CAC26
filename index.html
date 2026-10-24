@@ -398,9 +398,23 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 .aff-toggle { margin-top: var(--sp-12); }
 @media (max-width: 960px) { .afford-grid { grid-template-columns: minmax(0, 1fr); gap: var(--sp-24); } }
 @media (max-width: 600px) { .aff-inputs { grid-template-columns: minmax(0, 1fr); } }
+/* ---------- printed worksheet: one page built by buildPrintSheet() ---------- */
+.print-sheet { display: none; }
 @media print {
-  .mast, .dock, .no-print, .zoom, [data-screen="homes"], footer .aside { display: none !important; }
-  body { padding-bottom: 0; background: #fff; }
+  @page { margin: 12mm; }
+  :root { color-scheme: light; }
+  body { padding: 0; background: #fff; color: #000; font-size: 9.5pt; line-height: 1.3; }
+  body > *:not(main), main > *:not(.print-sheet) { display: none !important; }
+  .print-sheet { display: block; }
+  .print-sheet h1 { font-size: 16pt; margin: 0 0 2pt; }
+  .print-sheet h2 { font-size: 10.5pt; margin: 8pt 0 3pt; padding-bottom: 2pt; border-bottom: 1px solid #000; }
+  .print-sheet .print-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 0 16pt; align-items: start; }
+  .print-sheet p { margin: 2pt 0; }
+  .print-sheet table { width: 100%; font-size: 8pt; line-height: 1.2; }
+  .print-sheet td, .print-sheet th { padding: 2pt 0 2pt 8pt; border-bottom: 1px solid #ccc; color: #000; }
+  .print-sheet td small { display: inline; color: #444; }
+  .print-sheet td small::before { content: " · "; }
+  .print-sheet .fineprint { font-size: 8pt; color: #333; margin-top: 8pt; }
 }
 
 /* ---------- detail screen ---------- */
@@ -418,7 +432,6 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
   .screen.budget > .notice { grid-column: 1 / -1; }
   .budget-side { position: sticky; top: 88px; }
 }
-@media print { .budget-side { position: static; } }
 .t-hsm { font-size: var(--fs-md); line-height: 22px; font-weight: 600; letter-spacing: -.005em; }
 .t-bsm { font-size: var(--fs-xs); line-height: 16px; letter-spacing: .01em; color: var(--on-surface-variant); }
 .t-label { font-size: var(--fs-xs); line-height: 14px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--on-surface-variant); }
@@ -981,6 +994,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
   </section>
   </div>
 
+  <section class="print-sheet" id="printSheet" aria-hidden="true"></section>
 </main>
 
 <footer class="app-foot">
@@ -1005,11 +1019,11 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 </div>
 
 <!-- python tools/build.py writes these version numbers; don't edit them by hand. -->
-<script>const ASSET_VERSION = 'fa66f3e550';</script>
-<script src="assets/site-data.js?v=fa66f3e550"></script>
-<script src="assets/planner-math.js?v=fa66f3e550"></script>
-<script src="assets/budget-worksheet.js?v=fa66f3e550"></script>
-<script src="assets/screens.js?v=fa66f3e550"></script>
-<script src="assets/app.js?v=fa66f3e550"></script>
+<script>const ASSET_VERSION = 'fa6a5d5a1f';</script>
+<script src="assets/site-data.js?v=fa6a5d5a1f"></script>
+<script src="assets/planner-math.js?v=fa6a5d5a1f"></script>
+<script src="assets/budget-worksheet.js?v=fa6a5d5a1f"></script>
+<script src="assets/screens.js?v=fa6a5d5a1f"></script>
+<script src="assets/app.js?v=fa6a5d5a1f"></script>
 </body>
 </html>

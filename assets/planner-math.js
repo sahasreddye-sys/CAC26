@@ -4,6 +4,13 @@
 // the page, the network or storage, so the same file runs in the browser and
 // in the Node tests (tests/planner-math.test.js).
 
+// Long and short forms of street words, for address search.
+const STREET_WORDS = {
+  road: 'rd', drive: 'dr', street: 'st', lane: 'ln', court: 'ct', circle: 'cir', avenue: 'ave',
+  boulevard: 'blvd', place: 'pl', trail: 'trl', parkway: 'pkwy', terrace: 'ter', overlook: 'ovlk',
+  highway: 'hwy', crossing: 'xing', cove: 'cv', square: 'sq', ridge: 'rdg', run: 'run', way: 'way',
+};
+
 const PlannerMath = {
   // Turns what someone typed ("$7,800", "7800.50", "") into a number.
   // Returns null for an empty box and NaN for something that isn't a number,
@@ -202,6 +209,13 @@ const PlannerMath = {
     if (monthlyCost == null || comfortableLimit == null) return Infinity;
     const gap = monthlyCost - comfortableLimit;
     return (cashOk === false ? 1e12 : 0) + (gap > 0 ? 1e9 + gap : -gap);
+  },
+
+  // Address search: "5310 Berkshire Passage Way." and "5310 berkshire passage way" match,
+  // and "Road" matches "Rd". Lowercase, no punctuation, street words in short form.
+  normalizeAddress(text) {
+    return String(text ?? '').toLowerCase().replace(/[.,#'’]/g, '').replace(/\s+/g, ' ').trim()
+      .split(' ').map(w => STREET_WORDS[w] || w).join(' ');
   },
 
   monthsToSave(shortfall, savedPerMonth) {

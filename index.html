@@ -437,6 +437,8 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 .how-sure { margin-top: var(--sp-12); padding: var(--sp-8) var(--sp-12); border-left: 2px solid var(--outline); background: var(--surface-low); font-size: var(--fs-sm); }
 .how-sure p + p { margin-top: var(--sp-4); }
 .how-sure b { font-weight: 600; }
+.stress-inputs { display: grid; grid-template-columns: auto 7rem; gap: var(--sp-8) var(--sp-12); align-items: center; font-size: var(--fs-sm); margin-bottom: var(--sp-8); }
+.stress-table td { font-size: var(--fs-sm); }
 .aff-check { margin: var(--sp-16) 0 0; font-size: var(--fs-sm); line-height: 1.5; }
 .aff-table { margin-top: var(--sp-12); }
 .aff-table td { padding: var(--sp-8) 0 var(--sp-8) var(--sp-16); }
@@ -1031,6 +1033,13 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
             </div>
             <p class="fine" id="affDownWhatIf"></p>
             <p class="fine" id="affWhatIfNote"></p>
+            <h4 class="aff-h">Stress tests</h4>
+            <div class="stress-inputs">
+              <label for="stressIns">Insurance goes up by</label><span class="aff-box"><input type="text" id="stressIns" inputmode="decimal" autocomplete="off" placeholder="0">%</span>
+              <label for="stressTax">Taxed value goes up by</label><span class="aff-box"><input type="text" id="stressTax" inputmode="decimal" autocomplete="off" placeholder="0">%</span>
+            </div>
+            <div class="table-wrap"><table class="aff-table stress-table" id="stressTable"></table></div>
+            <p class="fine" id="stressMonths"></p>
             <p class="fine no-print"><a id="affSearch" href="#" target="_blank" rel="noopener">Look this address up online ↗</a> to see if it's listed for sale.</p>
             <h4 class="aff-h">Programs to check</h4>
             <div class="programs" id="affPrograms"></div>
@@ -1223,10 +1232,10 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 </div>
 
 <!-- python tools/build.py writes these version numbers; don't edit them by hand. -->
-<script src="assets/site-data.js?v=6ba6e66edd"></script>
-<script src="assets/planner-math.js?v=6ba6e66edd"></script>
-<script src="assets/budget-worksheet.js?v=6ba6e66edd"></script>
-<script src="assets/screens.js?v=6ba6e66edd"></script>
-<script src="assets/app.js?v=6ba6e66edd"></script>
+<script src="assets/site-data.js?v=b8bb1061a0"></script>
+<script src="assets/planner-math.js?v=b8bb1061a0"></script>
+<script src="assets/budget-worksheet.js?v=b8bb1061a0"></script>
+<script src="assets/screens.js?v=b8bb1061a0"></script>
+<script src="assets/app.js?v=b8bb1061a0"></script>
 </body>
 </html>

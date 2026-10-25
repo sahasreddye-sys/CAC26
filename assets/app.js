@@ -229,6 +229,8 @@ function prepare(market, raw) {
     d.bucket[i] = Math.max(0, Math.min(RAMP_STEPS - 1, Math.round(t * (RAMP_STEPS - 1))));
   }
   d.order = Array.from({ length: n }, (_, i) => i).filter(i => d.has[i]).sort((a, b) => H.est[a] - H.est[b]);
+  const lots = H.ac.filter(v => v > 0).sort((a, b) => a - b);
+  d.lotBounds = [quantile(lots, 0.01), quantile(lots, 0.99)];
   d.rankOf = new Int32Array(n).fill(-1);
   d.order.forEach((i, k) => { d.rankOf[i] = k; });
 
@@ -711,8 +713,22 @@ function renderHowSure(d, i) {
     lines.push(`<b>How sure we are:</b> this home is in the ${esc(tierName)} of Forsyth estimates. When tested, ${Math.round(cover * 100)}% of homes in that group had their county value inside their 80% range.`);
     if (cover < 0.75) lines.push('That is lower than for most homes, so treat this range as rough.');
   }
-  if (mayBePartlyBuilt(d, i)) lines.push(`Built ${d.H.yr[i]}: the county may have valued it while it was still being built, so the estimate can be too low.`);
-  if (!d.H.sqft[i]) lines.push('The county record has no building size, which makes the estimate less reliable.');
+  const H = d.H, yr = H.yr[i];
+  if (mayBePartlyBuilt(d, i)) lines.push(`Built ${yr}: the county may have valued it while it was still being built, so the estimate can be too low.`);
+  // how the model did on homes built in the same decade (Methods page tables)
+  const E = window.ERROR_TABLES;
+  const decade = yr ? (yr < 1970 ? 'before 1970' : `${Math.floor(yr / 10) * 10}s`) : null;
+  const row = E && decade ? E.by_decade.find(r => r.built === decade) : null;
+  if (row && isNewHome(d, i) && !mayBePartlyBuilt(d, i)) lines.push(`New construction (built ${yr}). For homes built in the ${decade} the model misses by a median ${row.median_error_pct.toFixed(1)}% (<a href="#/methods">Methods</a>).`);
+  else if (row && row.median_error_pct >= 2 * E.overall.median_error_pct) lines.push(`Homes built ${decade} miss by a median ${row.median_error_pct.toFixed(1)}%, against ${E.overall.median_error_pct.toFixed(1)}% for all homes (<a href="#/methods">Methods</a>).`);
+  if (!H.sqft[i]) lines.push('The county record has no building size, which makes the estimate less reliable.');
+  else {
+    // "similar" here means within a mile and within 25% of this home's size; under 10 is this app's cutoff for "few"
+    const similar = d.has[i] ? d.near(d.wx[i], d.wy[i], 1 / 69).filter(([, j]) => j !== i && H.sqft[j] && Math.abs(H.sqft[j] / H.sqft[i] - 1) <= 0.25).length : null;
+    if (similar != null && similar < 10) lines.push(`Only ${similar} home${similar === 1 ? '' : 's'} of similar size within a mile, so the model had little nearby to compare with.`);
+  }
+  const ac = H.ac[i];
+  if (ac && d.lotBounds && (ac < d.lotBounds[0] || ac > d.lotBounds[1])) lines.push(`The lot (${ac.toFixed(2)} acres) is ${ac > d.lotBounds[1] ? 'larger' : 'smaller'} than 99% of Forsyth homes’ lots, and unusual lots are harder to estimate.`);
   $('rSure').innerHTML = lines.map(l => `<p>${l}</p>`).join('');
 }
 
@@ -808,6 +824,7 @@ function resetAfford() {
   $('affIns').value = '';
   $('affHoa').value = '';
   $('affMaint').value = '';
+  $('stressIns').value = ''; $('stressTax').value = '';
   $('affDrop').value = plannerSetting('comfort.what_if_income_drop_percent').value ?? 10;
   const rate = homeCostSettings(d.market).ratePercent;
   $('affRate').value = rate ?? 7;
@@ -934,6 +951,39 @@ function renderAfford() {
   renderCash(price, down, s);
   renderPrograms(price);
   renderVerdict(cost);
+  renderStress(cost, s, price, downUsed, rate);
+}
+
+// Stress tests: the same home with one thing going wrong at a time. The insurance and
+// tax increases are typed by the family, so the planner doesn't pick a number for them.
+function renderStress(cost, s, price, downUsed, rate) {
+  if (cost.total == null) { $('stressTable').innerHTML = ''; $('stressMonths').textContent = ''; return; }
+  const b = familyBudget, ready = budgetIsFilledIn();
+  const bills = (b.debts || 0) + (b.otherCosts || 0);
+  const insUp = readMoneyBox('stressIns'), taxUp = readMoneyBox('stressTax');
+  const cut1 = plannerSetting('comfort.comfortable_min_left_percent').value, cut2 = plannerSetting('comfort.stretching_below_left_percent').value;
+  const outcome = total => {
+    if (!ready) return [fmtUSD(total), '—'];
+    const pct = PlannerMath.leftAfterHousingPercent(b.takeHome, b.debts, b.otherCosts, total);
+    const label = PlannerMath.comfortLabel(pct, cut1, cut2);
+    return [fmtUSD(total), (label ? `<b class="fit ${label}">${label}</b>, ` : '') + esc(leftWords(b.takeHome - bills - total))];
+  };
+  const higherRate = PlannerMath.monthlyLoanPayment(cost.loan, rate + 1, s.termYears);
+  const rows = [['As shown above', ...outcome(cost.total)]];
+  if (higherRate != null) rows.push([`Rate 1 point higher (${(rate + 1).toFixed(2)}%)`, ...outcome(cost.total - cost.loanPayment + higherRate)]);
+  rows.push(insUp ? [`Insurance up ${insUp}%`, ...outcome(cost.total + cost.homeInsurance * insUp / 100)]
+    : ['Insurance goes up', 'type a percent above', '—']);
+  rows.push(taxUp ? [`Taxed value up ${taxUp}%`, ...outcome(cost.total + cost.propertyTax * taxUp / 100)]
+    : ['Tax reassessment', 'type a percent above', '—']);
+  $('stressTable').innerHTML = tableHTML(['What changes', 'Each month', 'Left after every bill'], rows);
+
+  // months the leftover savings would cover if take-home pay stopped
+  const closing = PlannerMath.closingCosts(price, s.closingPercent) || 0;
+  const leftSavings = Math.max(0, (b.savings || 0) - downUsed - closing);
+  const outgo = cost.total + bills;
+  $('stressMonths').textContent = !ready ? 'Fill in your budget to see how long savings would last if income stopped.'
+    : leftSavings <= 0 ? `If income stopped, there would be no savings left after buying, so the ${fmtUSD(outgo)} a month for the home and your other bills would have to come from somewhere else right away.`
+    : `If income stopped, the ${fmtUSD(leftSavings)} left in savings after buying would cover about ${(leftSavings / outgo).toFixed(1)} months of the home and your other bills (${fmtUSD(outgo)} a month).`;
 }
 
 /* ---------------- shortlist and compare (DESIGN.md 5.4) ---------------- */
@@ -1112,7 +1162,7 @@ function renderVerdict(cost) {
   announce('detailAnnounce', `${cur().H.addr[state.sel]}: about ${fmtUSD(cost.total)} a month. ${v.label ? v.label + ', ' : ''}${leftWords(v.left)}.`);
 }
 
-['affPrice', 'affIns', 'affHoa', 'affMaint'].forEach(id => $(id).addEventListener('input', renderAfford));
+['affPrice', 'affIns', 'affHoa', 'affMaint', 'stressIns', 'stressTax'].forEach(id => $(id).addEventListener('input', renderAfford));
 $('affDown').addEventListener('input', () => { aff.downTyped = $('affDown').value.trim() !== ''; renderAfford(); });
 $('affRate').addEventListener('input', () => { aff.rateMoved = true; renderAfford(); });
 $('affDrop').addEventListener('input', renderAfford);

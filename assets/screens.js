@@ -27,7 +27,7 @@ function parseScreenRoute(hash) {
   return { screen: 'budget' };
 }
 
-const APP_NAME = 'Forsyth MarketMap';
+const APP_NAME = 'Abode';
 const SCREEN_TITLES = { budget: 'Budget', homes: 'Homes', detail: 'Home detail', about: 'About', methods: 'Methods' };
 
 function markScreenTabs(route) {

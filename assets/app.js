@@ -1019,9 +1019,11 @@ function renderStress(cost, s, price, downUsed, rate) {
 // so the list survives a refresh; budget numbers are never saved.
 const shortlist = [];
 const MAX_COMPARE = 3;
-const SHORTLIST_KEY = 'forsyth-marketmap-compare';
+const SHORTLIST_KEY = 'abode-compare';
+const OLD_SHORTLIST_KEY = 'forsyth-marketmap-compare'; // the app's earlier name
 try {
-  const saved = JSON.parse(localStorage.getItem(SHORTLIST_KEY) || '[]');
+  const saved = JSON.parse(localStorage.getItem(SHORTLIST_KEY) || localStorage.getItem(OLD_SHORTLIST_KEY) || '[]');
+  localStorage.removeItem(OLD_SHORTLIST_KEY);
   if (Array.isArray(saved)) saved.filter(id => typeof id === 'string').slice(0, MAX_COMPARE).forEach(id => shortlist.push(id));
 } catch { /* storage blocked or empty: start with no list */ }
 function saveShortlist() {
@@ -1225,7 +1227,7 @@ function buildPrintSheet() {
   const withHome = currentScreen === 'detail' && state.sel >= 0;
   const row = (k, v) => `<tr><td>${k}</td><td>${v}</td></tr>`;
   const money = v => v == null ? '—' : fmtUSD(v);
-  let html = `<h1>Forsyth MarketMap: home budget worksheet</h1><p>Printed ${esc(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }))}</p>`;
+  let html = `<h1>Abode: home budget worksheet</h1><p>Printed ${esc(new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }))}</p>`;
   html += '<div class="print-cols"><div><h2>Budget, each month</h2><table><tbody>' + row('Take-home pay', money(b.takeHome)) + row('Debt payments', money(b.debts))
     + row('Other regular costs', money(b.otherCosts)) + row('Savings for buying', money(b.savings))
     + row('Loan', `${homeCostSettings('forsyth').ratePercent ?? '—'}% for ${homeCostSettings('forsyth').termYears ?? '—'} years`)

@@ -1,8 +1,8 @@
-# Forsyth MarketMap
+# Abode
 
 A budget-first home planner for Forsyth County, GA. You enter your monthly take-home pay, debts, regular costs and savings, and it shows which homes fit and why a home is estimated at the price it is.
 
-![Forsyth MarketMap budget screen](docs/screenshot.jpg)
+![Abode home screen](docs/screenshot.jpg)
 
 **Live site:** https://sahasreddye-sys.github.io/CAC26/
 

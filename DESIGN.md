@@ -1,6 +1,6 @@
 # Design document: family home-buying planner (v3)
 
-App name: Forsyth MarketMap. This builds on the earlier House Price Evaluation Model (v2).
+App name: Abode (renamed from Forsyth MarketMap on October 25, 2026). This builds on the earlier House Price Evaluation Model (v2).
 
 ## 1. What the app is for
 

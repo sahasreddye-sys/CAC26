@@ -38,9 +38,10 @@ Things the planner can't fill in without you checking a primary source or making
 
 - **Preapproval and appraisal in “Next steps”.** The brief asked for them, but the CFPB pages checked (owning-a-home/prepare and /close) don't mention them, so only the steps those pages do mention are listed. Add them if you find an official page that covers them.
 - **FHA and VA loan choices.** Their insurance and funding-fee rules would need official sources; skipped.
-- **Touch tooltips on the map.** A tap opens the home right away; the list below the map has the same homes.
 
 ## Your call
+
+- **The name Abode.** Picked on Oct 25, 2026. I didn't check trademarks or other apps with the same name; worth a quick search before the submission.
 
 - **The Method page.** You asked for methodology in small (i) panels instead of its own page, so that is how it is built. The brief had asked for a page.
 - **Merging and deploying.** All of this is on the `polish` branch. Push it to `main` when you're happy: `git push origin polish:main` from the CAC26 folder.

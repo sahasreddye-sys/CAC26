@@ -1,6 +1,6 @@
 # Abode
 
-A budget-first home planner for Forsyth County, GA. You enter your monthly take-home pay, debts, regular costs and savings, and it shows which homes fit and why a home is estimated at the price it is.
+Abode (earlier called Forsyth MarketMap) is a budget-first home planner for Forsyth County, GA. You enter your monthly take-home pay, debts, regular costs and savings, and it shows which homes fit and why a home is estimated at the price it is.
 
 ![Abode home screen](docs/screenshot.jpg)
 
@@ -14,6 +14,7 @@ A budget-first home planner for Forsyth County, GA. You enter your monthly take-
 
 ## What it does
 
+- **Home page.** What the app does and the question it answers, with three ways in: start with your budget, try an example family, or look up a home.
 - **Budget.** You enter take-home pay, debts, other regular costs and savings (or press “try an example family”). It says how much you could spend on housing each month and still keep 20% of take-home pay, and the price that points to.
 - **Homes.** Every Forsyth home in the 2025 tax records, on a map and in a list, with filters for size, year, lot, school zones and “fits my budget”. The list can be sorted by how close each home is to your budget.
 - **Detail.** For one home: the estimate and its 80% range, the likely sale price, why the estimate is what it is, the full monthly cost (loan, tax, insurance, mortgage insurance, HOA dues), a comfort label, the cash needed up front, interest over the loan, and what-if sliders for the rate, the down payment and an income drop. Up to three homes can be compared side by side.

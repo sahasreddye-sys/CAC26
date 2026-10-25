@@ -51,8 +51,9 @@
         "unit": "mills",
         "source": "Forsyth County, 'Forsyth County Commission Adopts Millage Rates' (Aug 8, 2025): county 7.896 (M&O 4.791 + fire 2.805 + bond 0.300) + schools 16.626 (M&O 15.208 + bonds 1.418): https://www.forsythco.com/news/2025/08/forsyth-county-commission-adopts-millage-rates-2025/",
         "as_of": "2025-08-08",
-        "note": "Unincorporated Forsyth. City of Cumming homes pay a city rate on top, which the data can't tell apart. For 2026 the county lowered its M&O rate to 4.727 (forsythco.com, Aug 2026); update once the 2026 school rate is confirmed on an official page.",
-        "cite": "Forsyth County, 2025 adopted rates"
+        "note": "Unincorporated Forsyth. These rates were adopted in August 2025 and fund the 2026 budget. On 2026-10-25 no official county page listed newer adopted rates (news reports covered proposed 2026 changes), so this stays until one does. City of Cumming homes pay a city rate on top, which the data can't tell apart.",
+        "cite": "Forsyth County, 2025 adopted rates",
+        "last_checked": "2026-10-25"
       }
     },
     "homestead_exemption": {
@@ -163,6 +164,15 @@
         "as_of": "2026-07-08",
         "cite": "Georgia DCA"
       }
+    }
+  },
+  "maintenance": {
+    "reserve_per_month": {
+      "value": null,
+      "unit": "dollars per month",
+      "source": "TODO(Sahas)",
+      "as_of": "TODO",
+      "note": "Not set: no official source was found for a typical maintenance amount. The family can type their own on a home; until then the line says it isn't counted."
     }
   }
 }

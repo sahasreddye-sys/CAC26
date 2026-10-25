@@ -807,6 +807,7 @@ function resetAfford() {
   $('affDown').value = '';
   $('affIns').value = '';
   $('affHoa').value = '';
+  $('affMaint').value = '';
   $('affDrop').value = plannerSetting('comfort.what_if_income_drop_percent').value ?? 10;
   const rate = homeCostSettings(d.market).ratePercent;
   $('affRate').value = rate ?? 7;
@@ -853,6 +854,7 @@ function renderAfford() {
   const typedDown = readMoneyBox('affDown');
   const quote = readMoneyBox('affIns');
   const hoa = readMoneyBox('affHoa');
+  const maint = readMoneyBox('affMaint');
   const savings = familyBudget.savings || 0;
   const fromSavings = PlannerMath.downPaymentFromSavings(savings, price || 0, s.closingPercent) ?? 0;
   const down = typedDown != null ? Math.min(typedDown, price || 0) : fromSavings;
@@ -864,6 +866,7 @@ function renderAfford() {
   $('affDownNote').textContent = typedDown != null ? 'Your number' : `From your savings after ${s.closingPercent}% closing costs`;
   $('affInsNote').textContent = quote != null ? 'Your quote, per year' : `Blank uses $${(+s.insurancePer1000).toFixed(2)} per $1,000 of value a year (${plannerSetting('insurance.homeowners_rate_per_1000').cite})`;
   $('affHoaNote').textContent = hoa ? 'Your number, per month' : 'Many Forsyth subdivisions have them. Blank counts as $0.';
+  $('affMaintNote').textContent = maint ? 'Your number, per month' : 'Money set aside each month for repairs. Blank counts as $0.';
 
   if (price == null || price === undefined) {
     $('affTable').innerHTML = ''; $('affVerdict').textContent = 'Type a price to check.'; $('affPriceCheck').textContent = '';
@@ -876,20 +879,28 @@ function renderAfford() {
   // a down payment below the minimum isn't allowed, so the loan is figured with the minimum
   const costFor = downPayment => PlannerMath.monthlyHousingCost({ ...s, ratePercent: rate, price,
     downPayment: s.minDownPercent != null ? Math.max(downPayment, price * s.minDownPercent / 100) : downPayment,
-    insuranceMonthly: quote != null ? quote / 12 : null, hoaMonthly: hoa || 0 });
+    insuranceMonthly: quote != null ? quote / 12 : null, hoaMonthly: hoa || 0, maintenanceMonthly: maint || 0 });
   const downUsed = s.minDownPercent != null ? Math.max(down, price * s.minDownPercent / 100) : down;
   const cost = costFor(down);
   const downPct = price ? downUsed / price * 100 : 0;
   const millage = plannerSetting('property_tax.millage.forsyth_county');
+  const millageLink = (String(millage.source).match(/https?:\/\/\S+/) || [])[0];
+  // the loan payment shown as its two parts; the year-by-year table shows how the split shifts
+  const split = PlannerMath.firstPaymentSplit(cost.loan, rate, s.termYears);
+  if (split) { cost.principal = split.principal; cost.interest = split.interest; }
+  const loanText = esc(`first month of a ${fmtUSD(cost.loan)} loan at ${$('affRateOut').textContent} for ${s.termYears} years` + (downUsed > down ? ` (with the ${s.minDownPercent}% minimum down)` : ''));
   const notes = {
-    loanPayment: esc(`${fmtUSD(cost.loan)} loan at ${$('affRateOut').textContent} for ${s.termYears} years` + (downUsed > down ? ` (with the ${s.minDownPercent}% minimum down)` : '')),
-    propertyTax: s.mills != null ? esc(`40% of the price × ${s.mills} mills (${millage.cite})`) + term('assessed') + term('millage') : 'Not set yet: the tax rate needs an official source',
-    homeInsurance: esc(quote != null ? 'Your quote' : `Estimate: ${plannerSetting('insurance.homeowners_rate_per_1000').cite}`),
+    principal: `Pays down the loan; ${loanText}`,
+    interest: `Paid to the lender; together with principal, ${fmtUSD(cost.loanPayment)} every month`,
+    propertyTax: s.mills != null ? esc(`40% of the price × ${s.mills} mills (${millage.cite}), last checked ${longDate(millage.last_checked || millage.as_of)}. `)
+      + (millageLink ? `<a href="${esc(millageLink)}" target="_blank" rel="noopener">County page ↗</a>` : '') + term('assessed') + term('millage') : 'Not set yet: the tax rate needs an official source',
+    homeInsurance: esc(quote != null ? 'Your quote' : `Placeholder, not a quote: ${plannerSetting('insurance.homeowners_rate_per_1000').cite}. Type a real quote above.`),
     mortgageInsurance: esc(downPct >= s.pmiRequiredBelowPercent ? `None: ${s.pmiRequiredBelowPercent}% or more down`
       : `Under ${s.pmiRequiredBelowPercent}% down (${downPct.toFixed(1)}%): $${s.pmiPer100k} a month per $100,000 borrowed`) + term('pmi'),
     hoa: hoa ? 'Your number' : 'Not counted. Type your HOA dues above if the home has them.',
+    maintenance: maint ? 'Your number' : 'Not counted. No official figure was found, so type your own above.',
   };
-  const labels = { loanPayment: 'Loan payment', propertyTax: 'Property tax', homeInsurance: 'Home insurance', mortgageInsurance: 'Mortgage insurance', hoa: 'HOA dues' };
+  const labels = { principal: 'Principal', interest: 'Interest', propertyTax: 'Property tax', homeInsurance: 'Home insurance', mortgageInsurance: 'Mortgage insurance (PMI)', hoa: 'HOA dues', maintenance: 'Maintenance reserve' };
   $('affTable').innerHTML = '<tbody>' + Object.keys(labels).map(k => cost[k] == null
     ? `<tr><td>${labels[k]}<small>${notes[k]}</small></td><td class="missing">not set yet</td></tr>`
     : `<tr><td>${labels[k]}<small>${notes[k]}</small></td><td>${fmtUSD(cost[k])}</td></tr>`).join('') +
@@ -1101,7 +1112,7 @@ function renderVerdict(cost) {
   announce('detailAnnounce', `${cur().H.addr[state.sel]}: about ${fmtUSD(cost.total)} a month. ${v.label ? v.label + ', ' : ''}${leftWords(v.left)}.`);
 }
 
-['affPrice', 'affIns', 'affHoa'].forEach(id => $(id).addEventListener('input', renderAfford));
+['affPrice', 'affIns', 'affHoa', 'affMaint'].forEach(id => $(id).addEventListener('input', renderAfford));
 $('affDown').addEventListener('input', () => { aff.downTyped = $('affDown').value.trim() !== ''; renderAfford(); });
 $('affRate').addEventListener('input', () => { aff.rateMoved = true; renderAfford(); });
 $('affDrop').addEventListener('input', renderAfford);
@@ -1167,6 +1178,7 @@ const ASSUMPTION_ROWS = [
   ['Homestead exemption', 'property_tax.homestead_exemption', v => fmtUSD(v)],
   ['Home insurance', 'insurance.homeowners_rate_per_1000', v => `$${(+v).toFixed(2)} per $1,000 a year`],
   ['Mortgage insurance', 'mortgage_insurance.monthly_per_100k', v => `$${v}/mo per $100,000`],
+  ['Maintenance reserve', 'maintenance.reserve_per_month', v => fmtUSD(v) + ' a month'],
   ['Mortgage insurance applies under', 'mortgage_insurance.required_below_down_payment_percent', v => v + '% down'],
   ['Closing costs', 'closing_costs.percent_of_price', v => v + '% of price'],
   ['Housing guideline (reference only)', 'guidelines.housing_share_of_gross_income', v => v + '% of pay before taxes'],

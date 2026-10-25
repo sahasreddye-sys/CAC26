@@ -109,7 +109,7 @@ const PlannerMath = {
   // the total is null too, so the app never shows a total with a part left out.
   //   c = { price, downPayment, ratePercent, termYears, assessmentRatio, mills,
   //         exemption, insurancePer1000, insuranceMonthly (a typed quote, optional),
-  //         pmiPer100k, pmiRequiredBelowPercent, hoaMonthly (optional, typed in) }
+  //         pmiPer100k, pmiRequiredBelowPercent, hoaMonthly and maintenanceMonthly (optional, typed in) }
   monthlyHousingCost(c) {
     const loan = Math.max(0, c.price - c.downPayment);
     const parts = {
@@ -118,10 +118,20 @@ const PlannerMath = {
       homeInsurance: c.insuranceMonthly != null ? c.insuranceMonthly : PlannerMath.monthlyHomeInsurance(c.price, c.insurancePer1000),
       mortgageInsurance: PlannerMath.monthlyMortgageInsurance(loan, c.price, c.downPayment, c.pmiPer100k, c.pmiRequiredBelowPercent),
       hoa: c.hoaMonthly > 0 ? c.hoaMonthly : 0, // HOA dues are only counted when the family types them
+      maintenance: c.maintenanceMonthly > 0 ? c.maintenanceMonthly : 0, // same for a maintenance reserve
     };
     const missing = Object.keys(parts).filter(k => parts[k] == null);
     const total = missing.length ? null : Object.values(parts).reduce((a, b) => a + b, 0);
     return { loan, ...parts, total, missing };
+  },
+
+  // How the first monthly loan payment splits: interest is the balance times the
+  // monthly rate, the rest pays down the loan. The split shifts toward principal every month.
+  firstPaymentSplit(loanAmount, annualRatePercent, termYears) {
+    const payment = PlannerMath.monthlyLoanPayment(loanAmount, annualRatePercent, termYears);
+    if (payment == null) return null;
+    const interest = loanAmount * annualRatePercent / 100 / 12;
+    return { payment, interest, principal: payment - interest };
   },
 
   // Interest paid over the whole loan: every monthly payment added up, minus what was borrowed.

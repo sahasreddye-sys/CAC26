@@ -54,3 +54,18 @@ test('year-by-year table pays the loan off and adds up to the total interest', (
   near(interest, PM.totalInterest(440000, 7, 30), 'interest matches the total', 1);
   assert.ok(years[0].interest > years[0].principal, 'early years are mostly interest');
 });
+
+test('first payment splits into interest and principal', () => {
+  // $440,000 at 7%: interest $440,000 * 0.07 / 12 = $2,566.67, principal $2,927.33 - $2,566.67 = $360.66
+  const split = PM.firstPaymentSplit(440000, 7, 30);
+  near(split.interest, 2566.67, 'interest');
+  near(split.principal, 360.66, 'principal');
+  near(split.interest + split.principal, PM.monthlyLoanPayment(440000, 7, 30), 'adds up to the payment');
+});
+
+test('a maintenance reserve is added only when typed in', () => {
+  const without = PM.monthlyHousingCost({ ...forsyth, price: 500000, downPayment: 100000 });
+  const withReserve = PM.monthlyHousingCost({ ...forsyth, price: 500000, downPayment: 100000, maintenanceMonthly: 300 });
+  assert.equal(without.maintenance, 0);
+  near(withReserve.total - without.total, 300, 'total goes up by the reserve');
+});

@@ -318,6 +318,7 @@ const BUDGET_FIELDS = {
   form.addEventListener('submit', e => e.preventDefault());
   byId('clearBudget').addEventListener('click', clearBudget);
   byId('tryExample').addEventListener('click', fillExample);
+  byId('welcomeExample').addEventListener('click', () => { fillExample(); location.hash = '#/budget'; });
 
   if (plannerConfig) applyDefaults();
   else {

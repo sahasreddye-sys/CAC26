@@ -96,13 +96,8 @@ button { font: inherit; color: inherit; }
 .app-sub { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; font-size: var(--fs-xs); line-height: 1.35; }
 .app-sub .caps { font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--outline); white-space: nowrap; }
 .app-sub .sep { color: var(--outline-variant); }
-.app-desc { display: block; max-width: 46ch; font-size: var(--fs-xs); line-height: 1.35; color: var(--on-surface-variant); }
-.app-desc-phone { display: none; }
-@media (max-width: 599px) {
-  /* phones: the sentence sits under the header so the sticky header stays short */
-  .app-desc { display: none; }
-  .app-desc-phone { display: block; margin: 0; padding: var(--sp-8) var(--sp-16) 0; font-size: var(--fs-xs); line-height: 1.4; color: var(--on-surface-variant); }
-}
+.app-desc { display: block; font-size: var(--fs-xs); line-height: 1.35; color: var(--on-surface-variant); }
+
 .round-btn { width: 40px; height: 40px; border-radius: 4px; border: 0; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
 .round-btn .ms { font-size: var(--fs-lg); }
 .round-btn:active { transform: scale(.95); }
@@ -141,6 +136,23 @@ button { font: inherit; color: inherit; }
 .share-cell { display: flex; align-items: center; gap: var(--sp-8); justify-content: flex-end; }
 .share-bar { width: 120px; height: 8px; background: var(--surface-high); flex-shrink: 0; }
 .share-bar i { display: block; height: 100%; background: var(--primary-container); }
+/* ---------- home page ---------- */
+.welcome { max-width: 760px; margin: 0 auto; padding: var(--sp-48) 28px var(--sp-32); }
+.welcome h1 { font-size: var(--fs-xl); line-height: 1.2; color: var(--primary); }
+.welcome-lead { margin-top: var(--sp-8); font-size: var(--fs-lg); line-height: 1.4; }
+.welcome > p + p { margin-top: var(--sp-16); color: var(--on-surface-variant); }
+.welcome-actions { display: flex; flex-wrap: wrap; align-items: center; gap: var(--sp-12) var(--sp-16); margin-top: var(--sp-24); }
+.welcome-actions .cta { display: inline-flex; margin: 0; padding: 0 var(--sp-24); }
+.welcome-actions .btn-print { padding: 0 var(--sp-16); height: 48px; }
+.welcome-link { font-size: var(--fs-sm); }
+.welcome-steps { margin: var(--sp-32) 0 0; padding: 0; list-style: none; counter-reset: step; border-top: 1px solid var(--on-surface); }
+.welcome-steps li { counter-increment: step; position: relative; padding: var(--sp-12) 0 var(--sp-12) var(--sp-32); border-bottom: 1px solid var(--outline-variant); }
+.welcome-steps li::before { content: counter(step); position: absolute; left: 0; top: var(--sp-12); color: var(--outline); font-variant-numeric: tabular-nums; }
+.welcome-facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--sp-16); margin: var(--sp-24) 0; }
+.welcome-facts div { border-top: 2px solid var(--primary); padding-top: var(--sp-8); }
+.welcome-facts dt { font-size: var(--fs-xs); color: var(--on-surface-variant); }
+.welcome-facts dd { margin: var(--sp-4) 0 0; font-size: var(--fs-lg); font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) { .welcome { padding-top: var(--sp-24); } .welcome-facts { grid-template-columns: minmax(0, 1fr); } }
 /* ---------- about page ---------- */
 .methods .chart { margin: var(--sp-12) 0 0; }
 .methods .chart svg { display: block; width: 100%; max-width: 560px; height: auto; }
@@ -620,7 +632,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 
 <header class="mast">
   <div class="mast-in">
-    <a class="app-id" href="#/budget">
+    <a class="app-id" href="#/" aria-label="Abode home">
       <svg class="app-mark" viewBox="0 0 32 32" width="34" height="34" aria-hidden="true" focusable="false">
         <path d="M2 21 L9 11 L12.5 14.5 L18 6 L30 21" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
         <path d="M11.5 23 V18.5 L16 15 L20.5 18.5 V23" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>
@@ -628,7 +640,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
       </svg>
       <span class="app-text">
         <span class="app-name">Abode</span>
-        <span class="app-sub app-desc">A home-buying worksheet for Forsyth County, Georgia families: start from your monthly budget and see what a home would really cost each month.</span>
+        <span class="app-sub app-desc">Forsyth County, Georgia</span>
       </span>
     </a>
     <nav class="top-nav" aria-label="Screens (top)">
@@ -641,10 +653,31 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 </header>
 
 <main id="top">
-  <p class="app-desc-phone">A home-buying worksheet for Forsyth County, Georgia families: start from your monthly budget and see what a home would really cost each month.</p>
   <noscript><p class="noscript">This planner needs JavaScript to work out costs and show homes. It runs entirely on your device; nothing is sent anywhere. Turn JavaScript on and reload the page.</p></noscript>
   <p class="sr" id="budgetAnnounce" aria-live="polite"></p>
   <p class="sr" id="detailAnnounce" aria-live="polite"></p>
+  <section class="welcome" data-screen="welcome" aria-labelledby="welcomeTitle" hidden>
+    <h1 id="welcomeTitle">Abode</h1>
+    <p class="welcome-lead">A home-buying worksheet for Forsyth County, Georgia families: start from your monthly budget and see what a home would really cost each month.</p>
+    <p>Most tools ask how big a loan you could qualify for. Abode asks what you can afford comfortably: how much of your take-home pay is left after every bill, including the home.</p>
+    <div class="welcome-actions">
+      <a class="cta" href="#/budget"><span>Start with your budget</span><svg class="ms" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+      <button class="btn-print" type="button" id="welcomeExample">Try an example family</button>
+      <a class="welcome-link" href="#/homes">Or look up a home</a>
+    </div>
+    <ol class="welcome-steps">
+      <li><b>Budget.</b> Take-home pay, debts, other costs and savings. You get the most you could comfortably spend on housing each month, and the price that points to.</li>
+      <li><b>Homes.</b> Every home in Forsyth’s 2025 tax records, on a map and in a list, with the ones that fit your budget and how many fit in each school zone.</li>
+      <li><b>Detail.</b> One home’s estimate and range, its full monthly cost, the cash needed up front, and what-if checks like a higher rate or a drop in income.</li>
+    </ol>
+    <dl class="welcome-facts">
+      <div><dt>Homes in the data</dt><dd id="wHomes">—</dd></div>
+      <div><dt>Median miss against the county’s value</dt><dd id="wError">—</dd></div>
+      <div><dt>Your numbers</dt><dd>Stay on this device</dd></div>
+    </dl>
+    <p class="fine">Planning tool only. Not financial advice, a loan offer, or an appraisal. <a href="#/about">About Abode</a> · <a href="#/methods">How good the estimates are</a></p>
+  </section>
+
   <section class="screen budget" data-screen="budget" aria-labelledby="budgetTitle">
     <h1 class="sr" id="budgetTitle">Your monthly budget</h1>
     <div class="notice">
@@ -1237,10 +1270,10 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 </div>
 
 <!-- python tools/build.py writes these version numbers; don't edit them by hand. -->
-<script src="assets/site-data.js?v=3308756219"></script>
-<script src="assets/planner-math.js?v=3308756219"></script>
-<script src="assets/budget-worksheet.js?v=3308756219"></script>
-<script src="assets/screens.js?v=3308756219"></script>
-<script src="assets/app.js?v=3308756219"></script>
+<script src="assets/site-data.js?v=d8a05cd24c"></script>
+<script src="assets/planner-math.js?v=d8a05cd24c"></script>
+<script src="assets/budget-worksheet.js?v=d8a05cd24c"></script>
+<script src="assets/screens.js?v=d8a05cd24c"></script>
+<script src="assets/app.js?v=d8a05cd24c"></script>
 </body>
 </html>

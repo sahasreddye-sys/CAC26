@@ -4,7 +4,8 @@
 // "#/". The site has to stay one page: with no storage allowed, moving to a
 // separate HTML file would lose the budget the family typed in.
 //
-//   #/budget                      budget worksheet (also the default)
+//   (no hash) or #/               home page (the default)
+//   #/budget                      budget worksheet
 //   #/homes                       home lookup and map
 //   #/home/forsyth/<parcel id>    one home (the Detail tab)
 //   #/detail                      Detail tab with no home picked yet
@@ -16,6 +17,8 @@
 
 function parseScreenRoute(hash) {
   const h = decodeURIComponent(hash || '');
+  if (h === '' || h === '#' || h === '#/') return { screen: 'welcome' };
+  if (h === '#/budget') return { screen: 'budget' };
   let m = h.match(/^#\/homes?(?:\/(forsyth)(?:\/(.+))?)?$/) || h.match(/^#(forsyth)(?:\/(.+))?$/);
   if (m) return { screen: m[2] ? 'detail' : 'homes', market: m[1] || null, id: m[2] || null };
   if (h === '#/detail') return { screen: 'detail', market: null, id: null };
@@ -24,11 +27,11 @@ function parseScreenRoute(hash) {
   // shared compare link: parcel IDs only, never budget numbers
   m = h.match(/^#\/compare\/(forsyth)\/(.+)$/);
   if (m) { const ids = m[2].split(',').filter(Boolean); return { screen: 'detail', market: m[1], id: ids[0], compare: ids }; }
-  return { screen: 'budget' };
+  return { screen: 'welcome' }; // unknown or old addresses land on the home page
 }
 
 const APP_NAME = 'Abode';
-const SCREEN_TITLES = { budget: 'Budget', homes: 'Homes', detail: 'Home detail', about: 'About', methods: 'Methods' };
+const SCREEN_TITLES = { welcome: 'Home', budget: 'Budget', homes: 'Homes', detail: 'Home detail', about: 'About', methods: 'Methods' };
 
 function markScreenTabs(route) {
   const tab = route.screen;
@@ -36,7 +39,7 @@ function markScreenTabs(route) {
     if (a.dataset.screenLink === tab) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   });
-  document.title = SCREEN_TITLES[tab] + ' · ' + APP_NAME;
+  document.title = tab === 'welcome' ? APP_NAME + ': a home-buying worksheet for Forsyth County' : SCREEN_TITLES[tab] + ' · ' + APP_NAME;
 }
 
 function showScreen(route) {

@@ -1342,6 +1342,8 @@ function renderInfoPanels() {
   $('costSourcesBudget').innerHTML = assumptionsHTML();
 }
 renderInfoPanels();
+$('wHomes').textContent = fmtInt(SUMMARY.homes);
+$('wError').textContent = NOTEBOOK_ACCURACY.medianError + '%';
 
 /* ============================================================
    Methods page (#/methods): error charts and the fairness check.

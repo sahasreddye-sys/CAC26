@@ -162,7 +162,6 @@ button { font: inherit; color: inherit; }
 .about h3 { font-size: var(--fs-md); margin: var(--sp-24) 0 var(--sp-8); }
 .about p + p, .about p + .table-wrap, .about .table-wrap + p { margin-top: var(--sp-12); }
 .about table { font-size: var(--fs-sm); }
-.todo { padding: var(--sp-8) var(--sp-12); border: 1px dashed var(--secondary); color: var(--secondary); font-size: var(--fs-sm); }
 /* ---------- lookup ---------- */
 .lookup { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--sp-48); padding-top: var(--sp-48); padding-bottom: var(--sp-32); align-items: start; }
 .lookup .intro { font-size: var(--fs-sm); color: var(--on-surface-variant); max-width: 44ch; }
@@ -822,15 +821,13 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
       </dl>
       <h3>Where to get help</h3>
       <ul class="plain-list help-links">
-        <!-- TODO(verify): check the page still lists HUD-approved counselors near Forsyth County -->
-        <li><a href="https://www.consumerfinance.gov/find-a-housing-counselor/" target="_blank" rel="noopener">Find a housing counselor ↗</a> (Consumer Financial Protection Bureau)</li>
-        <!-- TODO(verify): check the steps and tools on this page -->
+        <!-- checked 2026-10-25: searches HUD-approved counselors by ZIP code -->
+        <li><a href="https://www.consumerfinance.gov/find-a-housing-counselor/" target="_blank" rel="noopener">Find a HUD-approved housing counselor near you ↗</a> (Consumer Financial Protection Bureau; search by ZIP code)</li>
+        <!-- checked 2026-10-25: four steps from preparing to shop to closing, with checklists -->
         <li><a href="https://www.consumerfinance.gov/owning-a-home/" target="_blank" rel="noopener">Buying a house: step-by-step guides ↗</a> (Consumer Financial Protection Bureau)</li>
-        <!-- TODO(verify): check what this page says about debt-to-income -->
+        <!-- checked 2026-10-25: "all your monthly debt payments divided by your gross monthly income" -->
         <li><a href="https://www.consumerfinance.gov/ask-cfpb/what-is-a-debt-to-income-ratio-en-1791/" target="_blank" rel="noopener">What is a debt-to-income ratio? ↗</a> (Consumer Financial Protection Bureau)</li>
-        <!-- TODO(verify): check what this page covers -->
-        <li><a href="https://www.hud.gov/topics/buying_a_home" target="_blank" rel="noopener">Buying a home ↗</a> (U.S. Department of Housing and Urban Development)</li>
-        <!-- TODO(verify): check current limits and rules; the planner lists the ones dated July 8, 2026 -->
+        <!-- checked 2026-10-24: price and income limits effective July 8, 2026 -->
         <li><a href="https://dca.georgia.gov/affordable-housing/home-ownership/georgia-dream" target="_blank" rel="noopener">Georgia Dream home loans ↗</a> (Georgia Department of Community Affairs)</li>
       </ul>
     </section>
@@ -1162,7 +1159,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
         <li>How close estimates are to what Forsyth homes sell for. There are no Forsyth sale prices in the open data.</li>
         <li>How the model does on a neighborhood it has never seen. The notebook ran that test for Alpharetta only.</li>
       </ul>
-      <p class="todo">TODO(Sahas): add a Forsyth sale-price check and a whole-neighborhoods-held-out test here if you run them in the notebook.</p>
+      <!-- TODO(Sahas): add a Forsyth sale-price check and a whole-neighborhoods-held-out test here if you run them in the notebook. -->
     </section>
   </article>
   </div>
@@ -1174,18 +1171,22 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 
     <section aria-labelledby="aboutWhy">
       <h2 id="aboutWhy">Why I built this</h2>
-      <p class="todo">TODO(Sahas): why you built this, in your own words.</p>
+      <!-- From DESIGN.md section 1. TODO(Sahas): add your own story here if you want to. -->
+      <p>Most affordability tools answer “what is the biggest loan we qualify for?” I wanted one that answers “what can we afford comfortably?” It starts from what a family earns and spends each month, shows which Forsyth homes fit that budget without leaving them short, and what each home would really cost per month.</p>
+      <p>It is a planning tool, not financial advice, an appraisal, or a loan offer.</p>
     </section>
 
     <section aria-labelledby="aboutWho">
       <h2 id="aboutWho">Who it’s for</h2>
-      <p class="todo">TODO(Sahas): who you made it for and how you hope they use it.</p>
+      <!-- From DESIGN.md section 2 -->
+      <ul class="plain-list">
+        <li>Families in or near Forsyth County thinking about buying a first or next home.</li>
+        <li>People who have already looked at listing sites and want to check whether a price is reasonable and whether they can carry it.</li>
+      </ul>
     </section>
 
-    <section aria-labelledby="aboutLearned">
-      <h2 id="aboutLearned">What I learned from talking to people</h2>
-      <p class="todo">TODO(Sahas): who you talked to and what changed because of it. Only real conversations and real quotes.</p>
-    </section>
+    <!-- TODO(Sahas): "What I learned from talking to people" goes here, with only real conversations
+         and real quotes. Copy the "Who it's for" section above as a template. -->
 
     <section aria-labelledby="aboutAccuracyTitle">
       <h2 id="aboutAccuracyTitle">How accurate the estimates are</h2>
@@ -1196,7 +1197,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
       <div class="table-wrap"><table id="aboutTiers"></table></div>
       <h3>What each set of inputs added</h3>
       <div class="table-wrap"><table id="aboutSteps"></table></div>
-      <p class="todo">TODO(Sahas): the notebook has no Forsyth test with whole neighborhoods held out (it was only run for Alpharetta) and no check against Forsyth sale prices. Add those numbers here only if you run them.</p>
+      <p>Not tested yet for Forsyth: how the model does on whole neighborhoods it has never seen (the notebook ran that only for Alpharetta), and how close estimates are to Forsyth sale prices (there are no Forsyth sale prices in the open data).</p>
     </section>
 
     <section aria-labelledby="aboutLimits">
@@ -1236,10 +1237,10 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 </div>
 
 <!-- python tools/build.py writes these version numbers; don't edit them by hand. -->
-<script src="assets/site-data.js?v=e6c1ea8512"></script>
-<script src="assets/planner-math.js?v=e6c1ea8512"></script>
-<script src="assets/budget-worksheet.js?v=e6c1ea8512"></script>
-<script src="assets/screens.js?v=e6c1ea8512"></script>
-<script src="assets/app.js?v=e6c1ea8512"></script>
+<script src="assets/site-data.js?v=fd583f0371"></script>
+<script src="assets/planner-math.js?v=fd583f0371"></script>
+<script src="assets/budget-worksheet.js?v=fd583f0371"></script>
+<script src="assets/screens.js?v=fd583f0371"></script>
+<script src="assets/app.js?v=fd583f0371"></script>
 </body>
 </html>

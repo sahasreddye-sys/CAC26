@@ -883,7 +883,15 @@ function renderAfford() {
   $('affDownNote').textContent = typedDown != null ? 'Your number' : `From your savings after ${s.closingPercent}% closing costs`;
   $('affInsNote').textContent = quote != null ? 'Your quote, per year' : `Blank uses $${(+s.insurancePer1000).toFixed(2)} per $1,000 of value a year (${plannerSetting('insurance.homeowners_rate_per_1000').cite})`;
   $('affHoaNote').textContent = hoa ? 'Your number, per month' : 'Many Forsyth subdivisions have them. Blank counts as $0.';
-  $('affMaintNote').textContent = maint ? 'Your number, per month' : 'Money set aside each month for repairs. Blank counts as $0.';
+  // Fannie Mae's rule of thumb as a suggestion: 1% a year for newer homes, up to 4% for homes over 30 years old
+  const mLow = plannerSetting('maintenance.rule_of_thumb_low_percent').value, mHigh = plannerSetting('maintenance.rule_of_thumb_high_percent').value;
+  const homeAge = d.H.yr[i] ? TAX_YEAR - d.H.yr[i] : null;
+  const mPct = mLow == null ? null : homeAge != null && homeAge > 30 ? mHigh : mLow;
+  const mSuggest = mPct != null && price ? price * mPct / 100 / 12 : null;
+  $('affMaint').placeholder = mSuggest ? fmtInt(round100(mSuggest)) : 'per month';
+  $('affMaintNote').textContent = maint ? 'Your number, per month'
+    : mSuggest ? `Fannie Mae suggests ${mLow}–${mHigh}% of value a year; ${mPct}% for a home this age is about ${fmtUSD(mSuggest)} a month. Blank counts as $0.`
+    : 'Money set aside each month for repairs. Blank counts as $0.';
 
   if (price == null || price === undefined) {
     $('affTable').innerHTML = ''; $('affVerdict').textContent = 'Type a price to check.'; $('affPriceCheck').textContent = '';
@@ -915,7 +923,7 @@ function renderAfford() {
     mortgageInsurance: esc(downPct >= s.pmiRequiredBelowPercent ? `None: ${s.pmiRequiredBelowPercent}% or more down`
       : `Under ${s.pmiRequiredBelowPercent}% down (${downPct.toFixed(1)}%): $${s.pmiPer100k} a month per $100,000 borrowed`) + term('pmi'),
     hoa: hoa ? 'Your number' : 'Not counted. Type your HOA dues above if the home has them.',
-    maintenance: maint ? 'Your number' : 'Not counted. No official figure was found, so type your own above.',
+    maintenance: maint ? 'Your number' : 'Not counted until you type an amount above (Fannie Mae’s suggestion is shown there).',
   };
   const labels = { principal: 'Principal', interest: 'Interest', propertyTax: 'Property tax', homeInsurance: 'Home insurance', mortgageInsurance: 'Mortgage insurance (PMI)', hoa: 'HOA dues', maintenance: 'Maintenance reserve' };
   $('affTable').innerHTML = '<tbody>' + Object.keys(labels).map(k => cost[k] == null
@@ -1262,7 +1270,7 @@ const ASSUMPTION_ROWS = [
   ['Homestead exemption', 'property_tax.homestead_exemption', v => fmtUSD(v)],
   ['Home insurance', 'insurance.homeowners_rate_per_1000', v => `$${(+v).toFixed(2)} per $1,000 a year`],
   ['Mortgage insurance', 'mortgage_insurance.monthly_per_100k', v => `$${v}/mo per $100,000`],
-  ['Maintenance reserve', 'maintenance.reserve_per_month', v => fmtUSD(v) + ' a month'],
+  ['Maintenance (suggested, not added)', 'maintenance.rule_of_thumb_low_percent', v => `${v}–${plannerSetting('maintenance.rule_of_thumb_high_percent').value}% of value a year`],
   ['Mortgage insurance applies under', 'mortgage_insurance.required_below_down_payment_percent', v => v + '% down'],
   ['Closing costs', 'closing_costs.percent_of_price', v => v + '% of price'],
   ['Housing guideline (reference only)', 'guidelines.housing_share_of_gross_income', v => v + '% of pay before taxes'],

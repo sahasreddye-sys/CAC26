@@ -167,12 +167,20 @@
     }
   },
   "maintenance": {
-    "reserve_per_month": {
-      "value": null,
-      "unit": "dollars per month",
-      "source": "TODO(Sahas)",
-      "as_of": "TODO",
-      "note": "Not set: no official source was found for a typical maintenance amount. The family can type their own on a home; until then the line says it isn't counted."
+    "rule_of_thumb_low_percent": {
+      "value": 1,
+      "unit": "percent of home value per year",
+      "source": "Fannie Mae, 'How to Build Your Maintenance and Repair Budget': 'The rule of thumb is to budget 1% to 4% of your home’s value per year for maintenance costs, including repairs and replacements.' Newer homes: 1%; homes more than 30 years old: lean toward 4%. https://yourhome.fanniemae.com/own/how-build-your-maintenance-and-repair-budget",
+      "as_of": "2026-10-25",
+      "cite": "Fannie Mae rule of thumb, low end (newer homes)",
+      "note": "Shown as a suggestion next to the maintenance box; only what the family types is added to the monthly total."
+    },
+    "rule_of_thumb_high_percent": {
+      "value": 4,
+      "unit": "percent of home value per year",
+      "source": "Fannie Mae, 'How to Build Your Maintenance and Repair Budget': 'The rule of thumb is to budget 1% to 4% of your home’s value per year for maintenance costs, including repairs and replacements.' Newer homes: 1%; homes more than 30 years old: lean toward 4%. https://yourhome.fanniemae.com/own/how-build-your-maintenance-and-repair-budget",
+      "as_of": "2026-10-25",
+      "cite": "Fannie Mae rule of thumb, high end (homes over 30 years old)"
     }
   }
 }

@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Forsyth MarketMap</title>
-<meta name="description" content="Forsyth MarketMap: a home-buying worksheet for Forsyth County, Georgia families. Start from your monthly budget and see what a home would really cost each month.">
+<meta name="description" content="A home-buying worksheet for Forsyth County, Georgia families: start from your monthly budget and see what a home would really cost each month.">
 <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
 <meta name="color-scheme" content="light dark">
 <meta name="theme-color" content="#f8f9ff" media="(prefers-color-scheme: light)">
@@ -13,7 +13,7 @@
 <link rel="apple-touch-icon" href="assets/touch-icon.png">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Forsyth MarketMap">
-<meta property="og:description" content="A home-buying worksheet for Forsyth County, Georgia families. Start from your monthly budget and see what a home would really cost each month.">
+<meta property="og:description" content="A home-buying worksheet for Forsyth County, Georgia families: start from your monthly budget and see what a home would really cost each month.">
 <meta property="og:url" content="https://sahasreddye-sys.github.io/CAC26/">
 <meta property="og:image" content="https://sahasreddye-sys.github.io/CAC26/docs/screenshot.jpg">
 <meta name="twitter:card" content="summary_large_image">
@@ -96,7 +96,13 @@ button { font: inherit; color: inherit; }
 .app-sub { display: flex; align-items: center; gap: var(--sp-4); min-width: 0; font-size: var(--fs-xs); line-height: 1.35; }
 .app-sub .caps { font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--outline); white-space: nowrap; }
 .app-sub .sep { color: var(--outline-variant); }
-.app-sub #screenName { font-size: var(--fs-xs); color: var(--on-surface-variant); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.app-desc { display: block; max-width: 46ch; font-size: var(--fs-xs); line-height: 1.35; color: var(--on-surface-variant); }
+.app-desc-phone { display: none; }
+@media (max-width: 599px) {
+  /* phones: the sentence sits under the header so the sticky header stays short */
+  .app-desc { display: none; }
+  .app-desc-phone { display: block; margin: 0; padding: var(--sp-8) var(--sp-16) 0; font-size: var(--fs-xs); line-height: 1.4; color: var(--on-surface-variant); }
+}
 .round-btn { width: 40px; height: 40px; border-radius: 4px; border: 0; background: var(--primary); color: var(--on-primary); display: grid; place-items: center; cursor: pointer; flex-shrink: 0; }
 .round-btn .ms { font-size: var(--fs-lg); }
 .round-btn:active { transform: scale(.95); }
@@ -120,6 +126,22 @@ button { font: inherit; color: inherit; }
   .dock { display: none; }
   body { padding-bottom: 0; }
 }
+.first-time { margin-top: var(--sp-16); padding-top: var(--sp-16); border-top: 1px solid var(--outline-variant); font-size: var(--fs-sm); }
+.first-time h2 { font-size: var(--fs-md); margin-bottom: var(--sp-8); }
+.first-time h3 { font-size: var(--fs-sm); margin: var(--sp-16) 0 var(--sp-4); }
+.glossary { margin: 0; }
+.glossary dt { font-weight: 600; margin-top: var(--sp-8); }
+.glossary dd { margin: 0; color: var(--on-surface-variant); }
+/* ---------- about page ---------- */
+.about { max-width: 760px; margin: 0 auto; padding: var(--sp-32) 28px var(--sp-48); }
+.about h1 { font-size: var(--fs-xl); line-height: 1.2; }
+.about-lead { margin-top: var(--sp-8); color: var(--on-surface-variant); }
+.about section { margin-top: var(--sp-32); }
+.about h2 { font-size: var(--fs-lg); padding-bottom: var(--sp-8); border-bottom: 1px solid var(--on-surface); margin-bottom: var(--sp-12); }
+.about h3 { font-size: var(--fs-md); margin: var(--sp-24) 0 var(--sp-8); }
+.about p + p, .about p + .table-wrap, .about .table-wrap + p { margin-top: var(--sp-12); }
+.about table { font-size: var(--fs-sm); }
+.todo { padding: var(--sp-8) var(--sp-12); border: 1px dashed var(--secondary); color: var(--secondary); font-size: var(--fs-sm); }
 /* ---------- lookup ---------- */
 .lookup { display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr); gap: var(--sp-48); padding-top: var(--sp-48); padding-bottom: var(--sp-32); align-items: start; }
 .lookup .intro { font-size: var(--fs-sm); color: var(--on-surface-variant); max-width: 44ch; }
@@ -152,6 +174,8 @@ button { font: inherit; color: inherit; }
 
 /* ---------- map ---------- */
 .mapfig { margin: 0; }
+.skip-map { position: absolute; left: -9999px; font-size: var(--fs-sm); }
+.skip-map:focus { position: static; display: inline-block; margin-bottom: var(--sp-8); }
 .map { position: relative; background: var(--surface-low); aspect-ratio: 5 / 4; touch-action: pan-y; }
 .map canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; }
 .map canvas.dragging { cursor: grabbing; }
@@ -580,7 +604,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
       </svg>
       <span class="app-text">
         <span class="app-name">Forsyth MarketMap</span>
-        <span class="app-sub"><span id="screenName">Budget</span></span>
+        <span class="app-sub app-desc">A home-buying worksheet for Forsyth County, Georgia families: start from your monthly budget and see what a home would really cost each month.</span>
       </span>
     </a>
     <nav class="top-nav" aria-label="Screens (top)">
@@ -593,6 +617,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 </header>
 
 <main id="top">
+  <p class="app-desc-phone">A home-buying worksheet for Forsyth County, Georgia families: start from your monthly budget and see what a home would really cost each month.</p>
   <noscript><p class="noscript">This planner needs JavaScript to work out costs and show homes. It runs entirely on your device; nothing is sent anywhere. Turn JavaScript on and reload the page.</p></noscript>
   <p class="sr" id="budgetAnnounce" aria-live="polite"></p>
   <p class="sr" id="detailAnnounce" aria-live="polite"></p>
@@ -757,6 +782,33 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
     <a class="cta" href="#/homes"><span>See homes</span><svg class="ms" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
     <button class="btn-print no-print" type="button" id="budgetPrint"><svg class="ms" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M7 9V3h10v6"/><path d="M7 17H4v-7a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v7h-3"/><path d="M7 14h10v7H7z"/></svg>Print or save as PDF</button>
     <p class="cta-note">The homes come from county records. They are not listings, and most are not for sale.</p>
+
+    <section class="first-time" aria-labelledby="firstTimeTitle">
+      <h2 id="firstTimeTitle">Buying for the first time?</h2>
+      <dl class="glossary">
+        <dt>Down payment</dt>
+        <dd>The part of the price you pay up front from savings. The loan covers the rest.</dd>
+        <dt>Closing costs</dt>
+        <dd>Fees paid when the purchase is finished, on top of the down payment, such as lender and title fees. The (i) next to Section B shows the share this planner uses and its source.</dd>
+        <dt>PMI (private mortgage insurance)</dt>
+        <dd>Insurance that protects the lender, not you. It is usually required when the down payment is under 20% of the price, and it adds to the monthly payment.</dd>
+        <dt>Debt-to-income (DTI)</dt>
+        <dd>Your monthly debt payments, including the new home payment, divided by your monthly pay before taxes. Lenders use it to decide how much to lend. This planner looks at what is left of take-home pay instead.</dd>
+      </dl>
+      <h3>Where to get help</h3>
+      <ul class="plain-list help-links">
+        <!-- TODO(verify): check the page still lists HUD-approved counselors near Forsyth County -->
+        <li><a href="https://www.consumerfinance.gov/find-a-housing-counselor/" target="_blank" rel="noopener">Find a housing counselor ↗</a> (Consumer Financial Protection Bureau)</li>
+        <!-- TODO(verify): check the steps and tools on this page -->
+        <li><a href="https://www.consumerfinance.gov/owning-a-home/" target="_blank" rel="noopener">Buying a house: step-by-step guides ↗</a> (Consumer Financial Protection Bureau)</li>
+        <!-- TODO(verify): check what this page says about debt-to-income -->
+        <li><a href="https://www.consumerfinance.gov/ask-cfpb/what-is-a-debt-to-income-ratio-en-1791/" target="_blank" rel="noopener">What is a debt-to-income ratio? ↗</a> (Consumer Financial Protection Bureau)</li>
+        <!-- TODO(verify): check what this page covers -->
+        <li><a href="https://www.hud.gov/topics/buying_a_home" target="_blank" rel="noopener">Buying a home ↗</a> (U.S. Department of Housing and Urban Development)</li>
+        <!-- TODO(verify): check current limits and rules; the planner lists the ones dated July 8, 2026 -->
+        <li><a href="https://dca.georgia.gov/affordable-housing/home-ownership/georgia-dream" target="_blank" rel="noopener">Georgia Dream home loans ↗</a> (Georgia Department of Community Affairs)</li>
+      </ul>
+    </section>
     </div>
   </section>
 
@@ -811,6 +863,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
     </div>
 
     <figure class="mapfig">
+      <button class="linkish skip-map" type="button" id="skipToList">Skip the map: go to the list of the same homes</button>
       <div class="map" id="mapCard">
         <canvas id="map" role="img" tabindex="0" aria-label="Map of homes shaded by estimated value. Drag or use the arrow keys to move, scroll or press plus and minus to zoom, 0 to show the whole county. Click a dot to open that home; the list below has the same homes."></canvas>
         <div class="loading" id="mapSkel">Loading map…</div>
@@ -1014,6 +1067,51 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
   </div>
 
   <section class="print-sheet" id="printSheet" aria-hidden="true"></section>
+  <div data-screen="about" hidden>
+  <article class="about" aria-labelledby="aboutTitle">
+    <h1 id="aboutTitle">About Forsyth MarketMap</h1>
+    <p class="about-lead">A home-buying worksheet for Forsyth County, Georgia families: start from your monthly budget and see what a home would really cost each month.</p>
+
+    <section aria-labelledby="aboutWhy">
+      <h2 id="aboutWhy">Why I built this</h2>
+      <p class="todo">TODO(Sahas): why you built this, in your own words.</p>
+    </section>
+
+    <section aria-labelledby="aboutWho">
+      <h2 id="aboutWho">Who it’s for</h2>
+      <p class="todo">TODO(Sahas): who you made it for and how you hope they use it.</p>
+    </section>
+
+    <section aria-labelledby="aboutLearned">
+      <h2 id="aboutLearned">What I learned from talking to people</h2>
+      <p class="todo">TODO(Sahas): who you talked to and what changed because of it. Only real conversations and real quotes.</p>
+    </section>
+
+    <section aria-labelledby="aboutAccuracyTitle">
+      <h2 id="aboutAccuracyTitle">How accurate the estimates are</h2>
+      <p>The model predicts the <b>county’s assessed value</b>, so these numbers measure how close it gets to that value, not to sale prices. They come from the notebook (<code>housing_model_v2.ipynb</code>), where every home was scored by a model that hadn’t seen it (5-fold cross-validation).</p>
+      <div class="table-wrap"><table id="aboutAccuracy"></table></div>
+      <h3>What the 80% range means</h3>
+      <p>Each estimate comes with a range, from 8.5% below to 11.0% above it. The range was set from the model’s misses on homes it hadn’t seen, so that about 8 in 10 county values land inside it. When that was checked on a held-out half of the homes, 80% did. It works better for some price tiers than others:</p>
+      <div class="table-wrap"><table id="aboutTiers"></table></div>
+      <h3>What each set of inputs added</h3>
+      <div class="table-wrap"><table id="aboutSteps"></table></div>
+      <p class="todo">TODO(Sahas): the notebook has no Forsyth test with whole neighborhoods held out (it was only run for Alpharetta) and no check against Forsyth sale prices. Add those numbers here only if you run them.</p>
+    </section>
+
+    <section aria-labelledby="aboutLimits">
+      <h2 id="aboutLimits">Limits</h2>
+      <ul class="plain-list">
+        <li>It is a planning tool, not financial advice, a loan offer, or an appraisal.</li>
+        <li>Estimates follow the county’s 2025 assessed values. The likely sale price divides them by 0.78, a ratio measured on 2025 Alpharetta sales, because Forsyth has no open sale records.</li>
+        <li>Homes built or split after the 2025 tax roll aren’t in the data, and homes built in 2025 may have been valued while still being built.</li>
+        <li>The monthly cost leaves out the homestead exemption, the City of Cumming tax rate, utilities and upkeep.</li>
+        <li>It doesn’t know a home’s condition or whether it is for sale, and it can’t check whether you qualify for a loan or a program.</li>
+      </ul>
+    </section>
+  </article>
+  </div>
+
 </main>
 
 <footer class="app-foot">
@@ -1021,7 +1119,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
     <img class="foot-logo" src="assets/logo.png" alt="Sahas Reddy Etikyala" width="96" height="40">
     <div>
       <p>Data: Forsyth County tax assessor parcel records, tax year 2025. A LightGBM model, 600 trees, trained on log county value with 5-fold cross-validation. Estimates follow assessed value, not market price, and are not an appraisal.</p>
-      <p><a href="https://github.com/sahasreddye-sys/CAC26" rel="noopener">Code and notebook on GitHub</a></p>
+      <p><a href="#/about">About this project</a> · <a href="https://github.com/sahasreddye-sys/CAC26" rel="noopener">Code and notebook on GitHub</a></p>
       <p>Planning tool only. Not financial advice, a loan offer, or an appraisal.</p>
       <p class="aside">The interface was built with help from AI coding tools. The model behind it, from the data cleaning to the validation, is my own original work.</p>
     </div>
@@ -1038,10 +1136,10 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 </div>
 
 <!-- python tools/build.py writes these version numbers; don't edit them by hand. -->
-<script src="assets/site-data.js?v=40dc94ef81"></script>
-<script src="assets/planner-math.js?v=40dc94ef81"></script>
-<script src="assets/budget-worksheet.js?v=40dc94ef81"></script>
-<script src="assets/screens.js?v=40dc94ef81"></script>
-<script src="assets/app.js?v=40dc94ef81"></script>
+<script src="assets/site-data.js?v=8f2e889d1c"></script>
+<script src="assets/planner-math.js?v=8f2e889d1c"></script>
+<script src="assets/budget-worksheet.js?v=8f2e889d1c"></script>
+<script src="assets/screens.js?v=8f2e889d1c"></script>
+<script src="assets/app.js?v=8f2e889d1c"></script>
 </body>
 </html>

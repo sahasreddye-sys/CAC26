@@ -20,6 +20,12 @@ Things the planner can't fill in without you checking a primary source or making
 | Forsyth millage | 24.522 mills | Forsyth County, 2025 adopted rates | The county changed its 2026 M&O rate; update once the 2026 school rate is on an official page. |
 | Georgia Dream limits | $625,000 price; $137,555 / $158,188 income | Georgia DCA page, effective July 8, 2026 | The page doesn't list credit score, education class or assistance amounts, so the app doesn't either. |
 
+## Your words and your checks
+
+- **About page (`#/about`).** “Why I built this”, “Who it’s for” and “What I learned from talking to people” are `TODO(Sahas)` placeholders on purpose. They show on the live page until you replace them in `index.html`.
+- **Help links under “Buying for the first time?”.** Each has a `TODO(verify)` comment in `index.html`. All five loaded on Oct 25, 2026 (the Georgia Dream link redirects to the DCA mortgage products page), but nobody has read them for you.
+- **Accuracy numbers.** The site now shows the numbers the notebook prints (cell 27 and cell 25). `data/summary.json` is from a slightly different run (R² 0.913 vs 0.912, median error 4.43% vs 4.42%); re-export it from the notebook if you want them to match.
+
 ## Left out on purpose
 
 - **Preapproval and appraisal in “Next steps”.** The brief asked for them, but the CFPB pages checked (owning-a-home/prepare and /close) don't mention them, so only the steps those pages do mention are listed. Add them if you find an official page that covers them.

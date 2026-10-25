@@ -46,10 +46,28 @@ if (typeof document !== 'undefined') (function () {
    read from data/summary.json through assets/site-data.js
    ============================================================ */
 const SUMMARY = window.MODEL_SUMMARY;
+
+// Validation numbers exactly as printed in housing_model_v2.ipynb for Forsyth.
+// data/summary.json came from a slightly different run, so its R2, error and
+// coverage differ in the last digit; the site shows the notebook's.
+//   final model: cell 27 output     feature steps: cell 25 output
+// Not in the notebook for Forsyth, so left out: a "whole neighborhoods held out" test
+// (only run for Alpharetta, cell 11) and any check against Forsyth sale prices.
+const NOTEBOOK_ACCURACY = {
+  r2: 0.912, mae: 45380, mape: 6.76, medianError: 4.42, within10: 81.6,
+  rangeLow: -8.5, rangeHigh: 11.0, coverage: 0.80,
+  tiers: [['lowest 20%', 0.800], ['20-40%', 0.876], ['40-60%', 0.845], ['60-80%', 0.794], ['top 20%', 0.685]],
+  steps: [
+    ['v1 inputs (with land value)', 4.34, 82.4],
+    ['minus land value', 4.50, 80.8],
+    ['+ quality and structure type', 4.45, 81.3],
+    ['+ coordinates (final)', 4.42, 81.6],
+  ],
+};
 const NB = {
   forsyth: {
     place: 'Forsyth County', name: 'Forsyth', county: 'Forsyth County', hue: 48,
-    n: SUMMARY.homes, medape: SUMMARY.final['median APE %'],
+    n: SUMMARY.homes, medape: NOTEBOOK_ACCURACY.medianError,
     bandLo: SUMMARY.final.band_log_low, bandHi: SUMMARY.final.band_log_high,
   },
 };
@@ -684,7 +702,7 @@ function driverSentence(d, i) {
 
 // "How sure we are" (DESIGN.md 5.3, part 5): the tested range for homes in the same price tier
 function renderHowSure(d, i) {
-  const tiers = Object.entries(SUMMARY.final.coverage_by_tier);
+  const tiers = NOTEBOOK_ACCURACY.tiers;
   const rank = d.rankOf ? d.rankOf[i] : -1;
   const lines = [];
   if (rank >= 0) {
@@ -1173,27 +1191,35 @@ function assumptionsHTML(rows = ASSUMPTION_ROWS, short = false) {
   }).join('') + '</tbody>';
 }
 
-function renderInfoPanels() {
-  const f = SUMMARY.final, pct = v => (v * 100).toFixed(0) + '%';
-  $('mHomes').textContent = fmtInt(SUMMARY.homes);
-  $('mSteps').innerHTML = tableHTML(['What the model could see', 'Median error', 'Within 10%'],
-    SUMMARY.steps.map(s => [esc(s.inputs), s['median APE %'].toFixed(2) + '%', s['within 10% of county value'].toFixed(1) + '%']));
-  $('mAccuracy').innerHTML = tableHTML(['Measure (against county value)', 'Result'], [
-    ['Half of homes are within', f['median APE %'].toFixed(1) + '% of their county value'],
-    ['Homes within 10% of county value', f['within 10% of county value'].toFixed(1) + '%'],
-    ['Average miss in dollars', fmtUSD(f['MAE $'])],
-    ['Share of county values the model explains (R²)', f.R2.toFixed(3)],
-    ['Homes whose county value falls inside their 80% range', pct(f.band_coverage)],
+// The accuracy tables: one copy in the Detail (i) panel, one on the About page.
+function accuracyTables(prefix) {
+  const a = NOTEBOOK_ACCURACY, pct = v => (v * 100).toFixed(1).replace(/\.0$/, '') + '%';
+  $(prefix + 'Steps').innerHTML = tableHTML(['What the model could see', 'Median error', 'Within 10%'],
+    a.steps.map(([name, err, w10]) => [esc(name), err.toFixed(2) + '%', w10.toFixed(1) + '%']));
+  $(prefix + 'Accuracy').innerHTML = tableHTML(['Measure (against county value)', 'Result'], [
+    ['Half of homes are within', a.medianError.toFixed(2) + '% of their county value'],
+    ['Homes within 10% of county value', a.within10.toFixed(1) + '%'],
+    ['Average miss in dollars', fmtUSD(a.mae)],
+    ['Average miss in percent', a.mape.toFixed(2) + '%'],
+    ['Share of county values the model explains (R²)', a.r2.toFixed(3)],
+    ['80% range around each estimate', `${a.rangeLow.toFixed(1)}% to +${a.rangeHigh.toFixed(1)}%`],
+    ['County values inside that range when tested', pct(a.coverage)],
   ]);
-  const tiers = Object.entries(f.coverage_by_tier);
-  $('mTiers').innerHTML = tableHTML(['Price tier', 'County value inside the 80% range'],
-    tiers.map(([k, v]) => [esc(k[0].toUpperCase() + k.slice(1)), pct(v)]));
+  $(prefix + 'Tiers').innerHTML = tableHTML(['Price tier', 'County value inside the 80% range'],
+    a.tiers.map(([k, v]) => [esc(k[0].toUpperCase() + k.slice(1)), pct(v)]));
+}
+
+function renderInfoPanels() {
+  const tiers = NOTEBOOK_ACCURACY.tiers, pct = v => (v * 100).toFixed(1).replace(/\.0$/, '') + '%';
+  $('mHomes').textContent = fmtInt(SUMMARY.homes);
+  accuracyTables('m');
+  accuracyTables('about');
   const top = tiers[tiers.length - 1][1];
   $('mWeak').innerHTML = [
     `The most expensive fifth of homes land inside their range only ${pct(top)} of the time, so treat their ranges as rough.`,
     'Homes built in the tax year may have been valued partway through construction, so their estimates can come out too low. They are marked “may be partly built”.',
     'There are no Forsyth sale prices in the open data, so the step from county value to sale price is borrowed from Alpharetta (below).',
-  ].map(s => `<li>${esc(s)}</li>`).join('');
+  ].map(t => `<li>${esc(t)}</li>`).join('');
 
   const ratio = saleRatio();
   $('mSaleLead').textContent = ratio
@@ -1444,6 +1470,13 @@ window.addEventListener('pageshow', e => { if (e.persisted) { $('filters').reset
 $('fReset').addEventListener('click', () => {
   $('filters').querySelectorAll('input, select').forEach(el => { if (el.type === 'checkbox') el.checked = false; else el.value = ''; });
   applyFilters();
+});
+// The list below the map has the same homes and can be sorted, so keyboard and
+// screen reader users can skip the map entirely.
+$('skipToList').addEventListener('click', () => {
+  const first = document.querySelector('#homeList button');
+  $('listSort').scrollIntoView({ block: 'start' });
+  (first || $('listSort').querySelector('button')).focus();
 });
 $('homeList').addEventListener('click', e => {
   const relax = e.target.closest('button[data-relax]');

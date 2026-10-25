@@ -8,6 +8,7 @@
 //   #/homes                       home lookup and map
 //   #/home/forsyth/<parcel id>    one home (the Detail tab)
 //   #/detail                      Detail tab with no home picked yet
+//   #/about                       about the project (linked from the footer)
 //   #/compare/forsyth/<id>,<id>   Detail with up to three homes side by side
 //
 // Links from the older site (#forsyth/<id>) still open the home.
@@ -17,6 +18,7 @@ function parseScreenRoute(hash) {
   let m = h.match(/^#\/homes?(?:\/(forsyth)(?:\/(.+))?)?$/) || h.match(/^#(forsyth)(?:\/(.+))?$/);
   if (m) return { screen: m[2] ? 'detail' : 'homes', market: m[1] || null, id: m[2] || null };
   if (h === '#/detail') return { screen: 'detail', market: null, id: null };
+  if (h === '#/about') return { screen: 'about' };
   // shared compare link: parcel IDs only, never budget numbers
   m = h.match(/^#\/compare\/(forsyth)\/(.+)$/);
   if (m) { const ids = m[2].split(',').filter(Boolean); return { screen: 'detail', market: m[1], id: ids[0], compare: ids }; }
@@ -24,7 +26,7 @@ function parseScreenRoute(hash) {
 }
 
 const APP_NAME = 'Forsyth MarketMap';
-const SCREEN_TITLES = { budget: 'Budget', homes: 'Homes', detail: 'Home detail' };
+const SCREEN_TITLES = { budget: 'Budget', homes: 'Homes', detail: 'Home detail', about: 'About' };
 
 function markScreenTabs(route) {
   const tab = route.screen;
@@ -32,7 +34,6 @@ function markScreenTabs(route) {
     if (a.dataset.screenLink === tab) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   });
-  document.getElementById('screenName').textContent = SCREEN_TITLES[tab];
   document.title = SCREEN_TITLES[tab] + ' · ' + APP_NAME;
 }
 

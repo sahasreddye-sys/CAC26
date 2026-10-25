@@ -1,6 +1,7 @@
 """Get the site ready after editing planner-config.json or any file in assets/.
 
-1. Writes assets/site-data.js from planner-config.json and data/summary.json.
+1. Writes assets/site-data.js from planner-config.json, data/summary.json and
+   data/forsyth_errors.json (made by tools/build_error_tables.py).
    The page reads its numbers from that script instead of fetching the JSON,
    so it also works when index.html is opened straight from the disk.
 2. Stamps one version (a hash of the asset files) on every script tag in
@@ -36,9 +37,11 @@ def model_summary():
 
 def site_data_text():
     config = json.loads((REPO / 'planner-config.json').read_text())
-    return ('// Made by tools/build.py from planner-config.json and data/summary.json. Do not edit by hand.\n'
+    errors = json.loads((REPO / 'data' / 'forsyth_errors.json').read_text())
+    return ('// Made by tools/build.py from planner-config.json and data/*.json. Do not edit by hand.\n'
             f'window.PLANNER_CONFIG = {json.dumps(config, ensure_ascii=False)};\n'
-            f'window.MODEL_SUMMARY = {json.dumps(model_summary())};\n')
+            f'window.MODEL_SUMMARY = {json.dumps(model_summary())};\n'
+            f'window.ERROR_TABLES = {json.dumps(errors)};\n')
 
 
 def asset_version(site_data):

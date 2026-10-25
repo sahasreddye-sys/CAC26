@@ -1250,6 +1250,74 @@ function renderInfoPanels() {
 renderInfoPanels();
 
 /* ============================================================
+   Methods page (#/methods): error charts and the fairness check.
+   Numbers come from data/forsyth_errors.json (tools/build_error_tables.py).
+   ============================================================ */
+function renderMethods() {
+  const E = window.ERROR_TABLES; if (!E) return;
+  const pct = v => v.toFixed(1) + '%';
+  const signed = v => Math.abs(v) < 0.5 ? 'about even' : (v > 0 ? `${v.toFixed(1)}% high` : `${(-v).toFixed(1)}% low`);
+  $('methodsSource').textContent = `Worked out by tools/build_error_tables.py from the estimates in data/forsyth.json.gz: ${fmtInt(E.overall.homes)} homes, median miss ${pct(E.overall.median_error_pct)}, ${pct(E.overall.within_10_pct)} within 10%. The notebook prints ${NOTEBOOK_ACCURACY.medianError}% for the same model from a slightly different run.`;
+
+  // estimate vs county value, counted on a log grid
+  const S = E.scatter, bins = S.bins, size = 360, pad = 60, cell = size / bins;
+  const max = Math.max(...S.counts.flat());
+  const pos = v => (Math.log10(v) - S.log10_from) / (S.log10_to - S.log10_from) * size;
+  let body = '';
+  S.counts.forEach((row, y) => row.forEach((c, x) => {
+    if (!c) return;
+    const o = (0.15 + 0.85 * Math.log(c) / Math.log(max)).toFixed(2);
+    body += `<rect class="dens" x="${(pad + x * cell).toFixed(1)}" y="${(size - (y + 1) * cell).toFixed(1)}" width="${cell.toFixed(1)}" height="${cell.toFixed(1)}" fill-opacity="${o}"/>`;
+  }));
+  body += `<line class="diag" x1="${pad}" y1="${size}" x2="${pad + size}" y2="0"/>`;
+  body += `<line class="axis-line" x1="${pad}" y1="${size}" x2="${pad + size}" y2="${size}"/><line class="axis-line" x1="${pad}" y1="0" x2="${pad}" y2="${size}"/>`;
+  for (const v of [2e5, 5e5, 1e6, 2e6]) {
+    const p = pos(v), label = v >= 1e6 ? `$${v / 1e6}M` : `$${v / 1e3}k`;
+    body += `<text x="${(pad + p).toFixed(1)}" y="${size + 16}" text-anchor="middle">${label}</text><text x="${pad - 6}" y="${(size - p + 4).toFixed(1)}" text-anchor="end">${label}</text>`;
+  }
+  body += `<text x="${pad + size / 2}" y="${size + 34}" text-anchor="middle">County value</text><text x="12" y="${size / 2}" text-anchor="middle" transform="rotate(-90 12 ${size / 2})">Estimate</text>`;
+  $('mScatter').innerHTML = `<svg viewBox="0 0 ${size + pad + 8} ${size + 42}" role="img" aria-label="Estimate against county value for ${fmtInt(E.overall.homes)} homes. Most homes sit close to the line where the two match; ${pct(E.overall.within_10_pct)} are within 10%.">${body}</svg>`;
+  $('mScatterCap').textContent = `${fmtInt(E.overall.homes)} homes. Both axes use a log scale from $100k to about $4M; homes outside that are left off.`;
+
+  // fairness: by price fifth (with the notebook's range coverage) and by decade built
+  const cover = Object.fromEntries(NOTEBOOK_ACCURACY.tiers);
+  $('mByPrice').innerHTML = tableHTML(['County value (fifth of homes)', 'Homes', 'Median miss', 'Within 10%', 'Usually', 'Inside 80% range (notebook)'],
+    E.by_price.map(r => [`${esc(r.band)}<small>${fmtShort(r.from)}–${fmtShort(r.to)}</small>`, fmtInt(r.homes), pct(r.median_error_pct), pct(r.within_10_pct), signed(r.median_signed_pct), cover[r.band] != null ? (cover[r.band] * 100).toFixed(1) + '%' : '—']));
+  $('mByDecade').innerHTML = tableHTML(['Built', 'Homes', 'Median miss', 'Within 10%', 'Usually'],
+    E.by_decade.map(r => [esc(r.built), fmtInt(r.homes), pct(r.median_error_pct), pct(r.within_10_pct), signed(r.median_signed_pct)]));
+  const prices = E.by_price.slice().sort((a, b) => a.median_error_pct - b.median_error_pct);
+  const best = prices[0], worst = prices[prices.length - 1];
+  const decades = E.by_decade.slice().sort((a, b) => b.median_error_pct - a.median_error_pct);
+  $('mFairText').textContent = `The model is not equally good for every home. It does best for homes in the ${best.band.replace('-', '–')} price band (median miss ${pct(best.median_error_pct)}) and worst for the ${worst.band} most expensive (${pct(worst.median_error_pct)}, with ${pct(worst.within_10_pct)} within 10%), where it usually comes in ${signed(worst.median_signed_pct)}. Older homes are the hardest: homes built ${decades[0].built} miss by a median ${pct(decades[0].median_error_pct)} and only ${pct(decades[0].within_10_pct)} are within 10%, against ${pct(E.overall.median_error_pct)} for all homes. Treat estimates for expensive and older homes as rough.`;
+
+  // subdivisions
+  const subRow = r => [esc(r.subdivision), fmtInt(r.homes), pct(r.median_error_pct), pct(r.within_10_pct), signed(r.median_signed_pct)];
+  const subHead = ['Subdivision', 'Homes', 'Median miss', 'Within 10%', 'Usually'];
+  $('mSubsText').textContent = `${fmtInt(E.subdivisions_counted)} subdivisions have 30 or more homes. Here are the ten with the smallest and the ten with the largest median miss.`;
+  $('mBestSubs').innerHTML = tableHTML(subHead, E.best_subdivisions.map(subRow));
+  $('mWorstSubs').innerHTML = tableHTML(subHead, E.worst_subdivisions.map(subRow));
+
+  // map of median miss in ~1 km squares
+  const M = E.map, cells = M.cells, lat0 = cells.reduce((a, c) => a + c[0], 0) / cells.length * M.cell_deg;
+  const kx = Math.cos(lat0 * Math.PI / 180);
+  const xs = cells.map(c => c[1]), ys = cells.map(c => c[0]);
+  const x0 = Math.min(...xs), x1 = Math.max(...xs), y0 = Math.min(...ys), y1 = Math.max(...ys);
+  const w = 520, unit = w / ((x1 - x0 + 1) * kx), h = (y1 - y0 + 1) * unit;
+  const cls = e => e < 3 ? 0 : e < 6 ? 1 : e < 10 ? 2 : 3;
+  const counts = [0, 0, 0, 0];
+  let map = '';
+  for (const [y, x, n, e] of cells) {
+    counts[cls(e)]++;
+    map += `<rect class="err-${cls(e)}" x="${((x - x0) * kx * unit).toFixed(1)}" y="${((y1 - y) * unit).toFixed(1)}" width="${(kx * unit + 0.5).toFixed(1)}" height="${(unit + 0.5).toFixed(1)}"><title>${n} homes, median miss ${e}%</title></rect>`;
+  }
+  $('mErrMap').innerHTML = `<svg viewBox="0 0 ${w} ${h.toFixed(0)}" role="img" aria-label="Map of Forsyth County in about 1 km squares, shaded by median miss. ${counts[3]} of ${cells.length} squares miss by 10% or more; the tables above describe the same pattern in words.">${map}</svg>`;
+  const labels = ['under 3%', '3–6%', '6–10%', '10% or more'];
+  $('mErrMapKey').innerHTML = 'Median miss:' + labels.map((l, k) => `<span class="key-swatch chart-swatch-${k}" aria-hidden="true"></span>${l} (${counts[k]} squares)`).join('');
+  $('mMapText').textContent = `Each square is about 1 km across and shows the median miss for the homes inside it. Squares with fewer than ${M.min_homes} homes are left out. North is up.`;
+}
+renderMethods();
+
+/* ============================================================
    Segmented controls
    ============================================================ */
 function initSeg(seg, onPick) {

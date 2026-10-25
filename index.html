@@ -142,6 +142,18 @@ button { font: inherit; color: inherit; }
 .share-bar { width: 120px; height: 8px; background: var(--surface-high); flex-shrink: 0; }
 .share-bar i { display: block; height: 100%; background: var(--primary-container); }
 /* ---------- about page ---------- */
+.methods .chart { margin: var(--sp-12) 0 0; }
+.methods .chart svg { display: block; width: 100%; max-width: 560px; height: auto; }
+.methods .chart figcaption { margin-top: var(--sp-8); font-size: var(--fs-xs); color: var(--on-surface-variant); }
+.chart text { font: 400 11px var(--sans); fill: var(--on-surface-variant); }
+.chart .axis-line { stroke: var(--outline); stroke-width: 1; }
+.chart .diag { stroke: var(--secondary); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.chart .dens { fill: var(--primary-container); }
+.chart .err-0 { fill: var(--primary-fixed-dim); } .chart .err-1 { fill: var(--primary-container); }
+.chart .err-2 { fill: var(--secondary); } .chart .err-3 { fill: var(--error); }
+.chart-swatch-0 { background: var(--primary-fixed-dim); } .chart-swatch-1 { background: var(--primary-container); } .chart-swatch-2 { background: var(--secondary); } .chart-swatch-3 { background: var(--error); }
+.key-swatch { display: inline-block; width: 10px; height: 10px; margin: 0 4px 0 10px; vertical-align: -1px; }
+
 .about { max-width: 760px; margin: 0 auto; padding: var(--sp-32) 28px var(--sp-48); }
 .about h1 { font-size: var(--fs-xl); line-height: 1.2; }
 .about-lead { margin-top: var(--sp-8); color: var(--on-surface-variant); }
@@ -1095,6 +1107,53 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
   </div>
 
   <section class="print-sheet" id="printSheet" aria-hidden="true"></section>
+  <div data-screen="methods" hidden>
+  <article class="about methods" aria-labelledby="methodsTitle">
+    <h1 id="methodsTitle">Methods: how good the estimates are</h1>
+    <p class="about-lead">Every number here compares the model’s estimate for a home with the county’s 2025 value for it. Each estimate was made by a model that never saw that home (5-fold cross-validation in <code>housing_model_v2.ipynb</code>). These are the same estimates the rest of the site shows. They say how close the model gets to the county’s value, not to sale prices.</p>
+    <p id="methodsSource" class="fine"></p>
+
+    <section aria-labelledby="mScatterTitle">
+      <h2 id="mScatterTitle">Estimate vs. county value</h2>
+      <p>Each square counts homes with about that county value (across) and that estimate (up). Darker squares hold more homes. Homes on the diagonal line were estimated exactly.</p>
+      <figure class="chart"><div id="mScatter"></div><figcaption id="mScatterCap"></figcaption></figure>
+    </section>
+
+    <section aria-labelledby="mFairTitle">
+      <h2 id="mFairTitle">Fairness check: where the model does worse</h2>
+      <p id="mFairText"></p>
+      <h3>By price</h3>
+      <div class="table-wrap"><table id="mByPrice"></table></div>
+      <h3>By year built</h3>
+      <div class="table-wrap"><table id="mByDecade"></table></div>
+    </section>
+
+    <section aria-labelledby="mSubsTitle">
+      <h2 id="mSubsTitle">By subdivision</h2>
+      <p id="mSubsText"></p>
+      <h3>Smallest misses</h3>
+      <div class="table-wrap"><table id="mBestSubs"></table></div>
+      <h3>Largest misses</h3>
+      <div class="table-wrap"><table id="mWorstSubs"></table></div>
+    </section>
+
+    <section aria-labelledby="mMapTitle">
+      <h2 id="mMapTitle">Where the misses are biggest</h2>
+      <p id="mMapText"></p>
+      <figure class="chart"><div id="mErrMap"></div><figcaption id="mErrMapKey"></figcaption></figure>
+    </section>
+
+    <section aria-labelledby="mCantTitle">
+      <h2 id="mCantTitle">What these checks can’t show</h2>
+      <ul class="plain-list">
+        <li>How close estimates are to what Forsyth homes sell for. There are no Forsyth sale prices in the open data.</li>
+        <li>How the model does on a neighborhood it has never seen. The notebook ran that test for Alpharetta only.</li>
+      </ul>
+      <p class="todo">TODO(Sahas): add a Forsyth sale-price check and a whole-neighborhoods-held-out test here if you run them in the notebook.</p>
+    </section>
+  </article>
+  </div>
+
   <div data-screen="about" hidden>
   <article class="about" aria-labelledby="aboutTitle">
     <h1 id="aboutTitle">About Forsyth MarketMap</h1>
@@ -1147,7 +1206,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
     <img class="foot-logo" src="assets/logo.png" alt="Sahas Reddy Etikyala" width="96" height="40">
     <div>
       <p>Data: Forsyth County tax assessor parcel records, tax year 2025. A LightGBM model, 600 trees, trained on log county value with 5-fold cross-validation. Estimates follow assessed value, not market price, and are not an appraisal.</p>
-      <p><a href="#/about">About this project</a> · <a href="https://github.com/sahasreddye-sys/CAC26" rel="noopener">Code and notebook on GitHub</a></p>
+      <p><a href="#/about">About this project</a> · <a href="#/methods">Methods</a> · <a href="https://github.com/sahasreddye-sys/CAC26" rel="noopener">Code and notebook on GitHub</a></p>
       <p>Planning tool only. Not financial advice, a loan offer, or an appraisal.</p>
       <p class="aside">The interface was built with help from AI coding tools. The model behind it, from the data cleaning to the validation, is my own original work.</p>
     </div>
@@ -1164,10 +1223,10 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 </div>
 
 <!-- python tools/build.py writes these version numbers; don't edit them by hand. -->
-<script src="assets/site-data.js?v=ace0e8f3be"></script>
-<script src="assets/planner-math.js?v=ace0e8f3be"></script>
-<script src="assets/budget-worksheet.js?v=ace0e8f3be"></script>
-<script src="assets/screens.js?v=ace0e8f3be"></script>
-<script src="assets/app.js?v=ace0e8f3be"></script>
+<script src="assets/site-data.js?v=6ba6e66edd"></script>
+<script src="assets/planner-math.js?v=6ba6e66edd"></script>
+<script src="assets/budget-worksheet.js?v=6ba6e66edd"></script>
+<script src="assets/screens.js?v=6ba6e66edd"></script>
+<script src="assets/app.js?v=6ba6e66edd"></script>
 </body>
 </html>

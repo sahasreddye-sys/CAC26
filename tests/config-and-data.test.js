@@ -52,3 +52,11 @@ test('the home count matches the model summary', () => {
 test('assets/site-data.js and the script versions are up to date (python tools/build.py)', () => {
   execFileSync('python3', [path.join(repo, 'tools', 'build.py'), '--check'], { stdio: 'pipe' });
 });
+
+test('the Methods page error tables come from the same estimates as the model summary', () => {
+  const errors = JSON.parse(fs.readFileSync(path.join(repo, 'data', 'forsyth_errors.json'), 'utf8'));
+  assert.equal(errors.overall.homes, summary.metrics.rows.forsyth);
+  assert.equal(errors.overall.median_error_pct, summary.metrics.forsyth_final['median APE %']);
+  assert.equal(errors.overall.within_10_pct, summary.metrics.forsyth_final['within 10% of county value']);
+  assert.equal(errors.by_price.reduce((a, r) => a + r.homes, 0), errors.overall.homes, 'price bands cover every home');
+});

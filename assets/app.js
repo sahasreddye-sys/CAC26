@@ -287,7 +287,7 @@ function loadMarket(market) {
    ============================================================ */
 const RAMP_STEPS = 28;
 const map = {
-  canvas: $('map'), ctx: null, W: 0, H: 0, dpr: 1, colors: [], fit: 1, hover: -1, active: false,
+  canvas: $('map'), ctx: null, W: 0, H: 0, dpr: 1, colors: [], fit: 1, hover: -1, touchTip: -1, active: false,
   cam: { x: 0, y: 0, s: 1 }, springs: null, dragging: null, raf: 0,
 };
 map.ctx = map.canvas.getContext && map.canvas.getContext('2d');
@@ -392,10 +392,10 @@ function pickAt(sx, sy, px = 10) {
   const hit = d.near(wx, wy, px / map.cam.s).find(h => !d.match || d.match[h[1]]);
   return hit ? hit[1] : -1;
 }
-function showTip(i, sx, sy) {
+function showTip(i, sx, sy, tapAgain) {
   const tip = $('tip'), d = cur();
   if (i < 0) { tip.hidden = true; return; }
-  tip.innerHTML = `<b>${esc(d.H.addr[i])}</b> · ${fmtShort(d.H.est[i])}`;
+  tip.innerHTML = `<b>${esc(d.H.addr[i])}</b> · ${fmtShort(d.H.est[i])}` + (tapAgain ? '<br><small>Tap again to open</small>' : '');
   tip.style.left = Math.max(80, Math.min(map.W - 80, sx)) + 'px';
   tip.style.top = sy + 'px';
   tip.hidden = false;
@@ -441,6 +441,13 @@ function showTip(i, sx, sy) {
     const rect = c.getBoundingClientRect();
     if (g.moved <= 6 && e.type === 'pointerup') {
       const i = pickAt(e.clientX - rect.left, e.clientY - rect.top, g.touch ? 16 : 10);
+      // on a touch screen there is no hover, so the first tap shows the tooltip and a second tap opens the home
+      if (g.touch && i !== map.touchTip) {
+        map.touchTip = i; map.hover = i; requestDraw();
+        if (i >= 0) { const [x, y] = toScreen(cur(), i); showTip(i, x, y, true); } else showTip(-1);
+        return;
+      }
+      map.touchTip = -1;
       if (i >= 0) selectHome(i, { from: 'map' });
       return;
     }

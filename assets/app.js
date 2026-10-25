@@ -1790,15 +1790,22 @@ matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { th
   // need it: it downloads once the Budget screen is idle and is read when Homes or Detail opens.
   let started = false;
   const start = () => { if (!started) { started = true; setMarket('forsyth', parseScreenRoute(location.hash).id); } };
-  if (parseScreenRoute(location.hash).screen !== 'budget') start();
+  // only Homes and Detail need the homes data; Budget, About and Methods don't
+  const needsHomes = screen => screen === 'homes' || screen === 'detail';
+  if (needsHomes(parseScreenRoute(location.hash).screen)) start();
   else setTimeout(() => (window.requestIdleCallback || (f => f()))(() => downloadMarket('forsyth'), { timeout: 3000 }), 1500);
   window.addEventListener('hashchange', () => {
     const r = parseScreenRoute(location.hash);
-    if (r.screen !== 'budget' && !started) { start(); return; }
+    if (needsHomes(r.screen) && !started) { start(); return; }
     if (!r.market || !cur()) return;
     if (r.market !== state.market) { setMarket(r.market, r.id); return; }
     const d = cur(), i = r.id && d ? d.H.id.indexOf(r.id) : -1;
+    if (r.compare) {
+      r.compare.forEach(id => { if (d.H.id.includes(id) && !shortlist.includes(id) && shortlist.length < MAX_COMPARE) shortlist.push(id); });
+      saveShortlist();
+    }
     if (i >= 0 && i !== state.sel) selectHome(i, { from: 'link' });
+    else if (r.compare) renderCompare();
   });
 })();
 

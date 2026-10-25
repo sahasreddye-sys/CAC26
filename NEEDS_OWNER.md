@@ -7,6 +7,7 @@ Things the planner can't fill in without you checking a primary source or making
 | What | Why it isn't set | Where to look |
 |------|------------------|---------------|
 | Homestead exemption (`property_tax.homestead_exemption`) | The Forsyth County Board of Assessors pages block automated reading, so the amount couldn't be confirmed from the county. A search summary said the regular exemption takes $8,000 off the assessed value for the county M&O and fire portions and $2,000 off the school and state portions, which the planner's single “exemption” number can't represent without a code change. | forsythco.com → Board of Assessors → Homestead Exemption, or call 770-781-2106. Then decide whether to split the tax math by millage portion. |
+| Maintenance reserve (`maintenance.reserve_per_month`) | No official source for a typical amount was found, so it is `TODO(Sahas)`. Families can type their own on a home; until then the line says it isn't counted. | Pick a source you can defend (or keep it typed-in only). |
 | City of Cumming tax rate | The data can't tell which homes are inside the city, so city homes are under-taxed. | City of Cumming millage page, plus a city-limits layer from Forsyth County GIS. |
 
 ## Numbers to double-check before the video
@@ -25,6 +26,13 @@ Things the planner can't fill in without you checking a primary source or making
 - **About page (`#/about`).** “Why I built this”, “Who it’s for” and “What I learned from talking to people” are `TODO(Sahas)` placeholders on purpose. They show on the live page until you replace them in `index.html`.
 - **Help links under “Buying for the first time?”.** Each has a `TODO(verify)` comment in `index.html`. All five loaded on Oct 25, 2026 (the Georgia Dream link redirects to the DCA mortgage products page), but nobody has read them for you.
 - **Accuracy numbers.** The site now shows the numbers the notebook prints (cell 27 and cell 25). `data/summary.json` is from a slightly different run (R² 0.913 vs 0.912, median error 4.43% vs 4.42%); re-export it from the notebook if you want them to match.
+
+## From the expansion branch
+
+- **Methods page TODO.** A Forsyth sale-price check and a whole-neighborhoods-held-out test for Forsyth would need new notebook runs; the page says so.
+- **New computations live in `tools/build_error_tables.py`, not in the notebook.** They use the out-of-fold estimates already exported in `data/forsyth.json.gz`, so they reproduce from the notebook's output without retraining. Copy the script into a notebook cell if you want everything in one place.
+- **Thresholds that are this app's choice:** “few similar homes” is under 10 homes within a mile and within 25% of the size; “odd lot” is outside the 1st–99th percentile of Forsyth lots; “older homes” notes show when a decade's median miss is at least twice the overall.
+- **Tag `stable-before-expansion`** is only on this Mac until you push tags (`git push origin stable-before-expansion`).
 
 ## Left out on purpose
 

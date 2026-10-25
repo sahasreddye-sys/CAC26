@@ -1520,6 +1520,60 @@ function listSortInUse(limit) {
   return sort;
 }
 
+/* ---------------- how many homes fit, by school zone or subdivision ---------------- */
+// Worked out from the homes data and the family's budget only. The per-home check is the
+// same one the list uses, so it is cached until the budget or the settings change.
+const countyFit = { key: '', fits: null, showAll: false };
+
+function countyFitFlags(d) {
+  const b = familyBudget, tight = $('cfTight').checked;
+  const key = JSON.stringify([b, tight, homeCostSettings(d.market)]);
+  if (countyFit.key === key) return countyFit.fits;
+  const fits = new Uint8Array(d.n);
+  for (let i = 0; i < d.n; i++) {
+    const fit = homeFitLabel(d, i);
+    fits[i] = fit.cashOk && (fit.label === 'Comfortable' || (tight && fit.label === 'Tight')) ? 1 : 0;
+  }
+  countyFit.key = key; countyFit.fits = fits;
+  return fits;
+}
+
+function renderCountyFit() {
+  const d = cur(); if (!d) return;
+  if (!budgetIsFilledIn() || comfortableLimit() == null) {
+    $('countyFitSummary').textContent = 'Fill in your budget to see how many homes fit.';
+    $('countyFitTable').innerHTML = ''; $('cfMore').hidden = true;
+    return;
+  }
+  const fits = countyFitFlags(d), tight = $('cfTight').checked;
+  let total = 0; for (let i = 0; i < d.n; i++) total += fits[i];
+  $('countyFitSummary').innerHTML = `<b>${fmtInt(total)}</b> of ${fmtInt(d.n)} homes (${(total / d.n * 100).toFixed(1)}%) would leave you ${tight ? 'comfortable or tight' : 'comfortable'} with take-home pay of ${fmtUSD(familyBudget.takeHome)} a month.`;
+
+  const group = $('cfGroup').value, rows = new Map();
+  const nameOf = group === 'sub'
+    ? i => d.subOf(i)
+    : i => { if (!d.schools) return ''; const k = d.schools.home[group][i]; return k >= 0 ? titleCase(d.schools.levels[group][k]) : ''; };
+  for (let i = 0; i < d.n; i++) {
+    const name = nameOf(i); if (!name) continue;
+    const r = rows.get(name) || { name, n: 0, fit: 0 };
+    r.n++; r.fit += fits[i]; rows.set(name, r);
+  }
+  let list = [...rows.values()].filter(r => group !== 'sub' || r.n >= 20).sort((a, b) => b.fit / b.n - a.fit / a.n || b.n - a.n);
+  const shown = countyFit.showAll ? list : list.slice(0, 15);
+  $('cfMore').hidden = list.length <= 15;
+  $('cfMore').textContent = countyFit.showAll ? 'Show fewer' : `Show all ${list.length}`;
+  const label = { ES: 'Elementary zone', MS: 'Middle zone', HS: 'High zone', sub: 'Subdivision' }[group];
+  $('countyFitTable').innerHTML = tableHTML([label, 'Homes', 'Fit', 'Share that fit'], shown.map(r => {
+    const pct = r.fit / r.n * 100;
+    return [esc(r.name), fmtInt(r.n), fmtInt(r.fit), `<span class="share-cell">${pct.toFixed(0)}%<span class="share-bar" aria-hidden="true"><i style="width:${pct.toFixed(1)}%"></i></span></span>`];
+  }));
+}
+$('cfGroup').addEventListener('change', () => { countyFit.showAll = false; renderCountyFit(); });
+$('cfTight').addEventListener('change', renderCountyFit);
+$('cfMore').addEventListener('click', () => { countyFit.showAll = !countyFit.showAll; renderCountyFit(); });
+window.addEventListener('budgetchange', () => { if (currentScreen === 'homes') { clearTimeout(countyFit.timer); countyFit.timer = setTimeout(renderCountyFit, 400); } });
+window.addEventListener('hashchange', () => { if (parseScreenRoute(location.hash).screen === 'homes') setTimeout(renderCountyFit, 0); });
+
 function setStatus(msg, error) { const s = $('status'); s.textContent = msg; s.classList.toggle('error', !!error); }
 
 async function setMarket(market, selectId) {
@@ -1556,6 +1610,7 @@ async function setMarket(market, selectId) {
   setStatus('');
   buildRamp(); sizeMap(); resetCam(false); renderTry(); renderStats(d);
   setupFilters(d); applyFilters();
+  renderCountyFit();
   const shared = parseScreenRoute(location.hash).compare;
   if (shared) shared.forEach(id => { if (d.H.id.includes(id) && !shortlist.includes(id) && shortlist.length < MAX_COMPARE) shortlist.push(id); });
   if (selectId) {

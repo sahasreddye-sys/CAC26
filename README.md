@@ -20,7 +20,8 @@ A budget-first home planner for Forsyth County, GA. You enter your monthly take-
 - **Sources.** Small (i) buttons next to each section explain where the numbers come from, how accurate the model is, and why the comfort cutoffs are what they are. Every rate shows its source and date.
 - **Print.** A one-page worksheet with the budget, the home, the costs and the sources.
 - **About** (`#/about`, linked in the footer): why it was built, who it's for, the model's accuracy as the notebook reports it, and its limits. Under the budget results there is a short glossary and a list of official places to get help.
-- **Private.** Everything runs in the browser. Nothing you type is sent anywhere or saved, the page loads files only from this site, and a shared compare link holds home IDs only.
+- **Private.** Everything runs in the browser. Nothing you type is sent anywhere or saved. The only thing kept is the list of homes you add to compare (parcel IDs, in this browser's storage, with a clear button). The page loads files only from this site, and a shared compare link holds home IDs only.
+- **Methods** (`#/methods`): estimate vs. county value, a fairness check by price and year built, the best and worst subdivisions, and a map of where the misses are biggest, all worked out from the estimates the site shows (`tools/build_error_tables.py`).
 
 The planner is a learning project. It is not financial advice, a loan offer or an appraisal.
 

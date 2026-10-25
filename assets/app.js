@@ -952,6 +952,26 @@ function renderAfford() {
   renderPrograms(price);
   renderVerdict(cost);
   renderStress(cost, s, price, downUsed, rate);
+  renderRentVsBuy(cost, s, price, downUsed, rate);
+}
+
+// Rent vs. buy with the family's own rent only: no outside rents, no guess about
+// home prices or rent going up. It compares money out each month and how much of it pays down the loan.
+function renderRentVsBuy(cost, s, price, downUsed, rate) {
+  const rent = readMoneyBox('affRent');
+  if (!rent || cost.total == null) { $('affRentBuy').innerHTML = rent === undefined ? '<p>Use numbers only for rent.</p>' : ''; return; }
+  const years = PlannerMath.amortizationByYear(cost.loan, rate, s.termYears) || [];
+  const principal5 = years.slice(0, 5).reduce((a, y) => a + y.principal, 0);
+  const upFront = downUsed + (PlannerMath.closingCosts(price, s.closingPercent) || 0);
+  const diff = cost.total - rent;
+  $('affRentBuy').innerHTML = `<h5 class="info-sub">Rent vs. buy</h5>`
+    + `<p>This home would cost ${fmtUSD(cost.total)} a month, ${fmtUSD(Math.abs(diff))} ${diff >= 0 ? 'more' : 'less'} than your rent of ${fmtUSD(rent)}. Buying also takes about ${fmtUSD(upFront)} up front.</p>`
+    + `<div class="table-wrap"><table>${tableHTML(['Over the first 5 years', 'Renting', 'Buying this home'], [
+        ['Paid out each month, added up', fmtUSD(rent * 60), fmtUSD(cost.total * 60)],
+        ['Of that, paying down the loan', '$0', fmtUSD(principal5)],
+        ['Cash up front', '$0', fmtUSD(upFront)],
+      ])}</table></div>`
+    + `<p class="fine">Uses your rent as it is today. Rent increases, changes in the home’s value, repairs beyond the maintenance line, and selling costs aren’t included.</p>`;
 }
 
 // Stress tests: the same home with one thing going wrong at a time. The insurance and
@@ -987,9 +1007,21 @@ function renderStress(cost, s, price, downUsed, rate) {
 }
 
 /* ---------------- shortlist and compare (DESIGN.md 5.4) ---------------- */
-// Parcel IDs only, in memory; gone when the page closes.
+// Parcel IDs only. They are the one thing this site saves, in this browser's storage,
+// so the list survives a refresh; budget numbers are never saved.
 const shortlist = [];
 const MAX_COMPARE = 3;
+const SHORTLIST_KEY = 'forsyth-marketmap-compare';
+try {
+  const saved = JSON.parse(localStorage.getItem(SHORTLIST_KEY) || '[]');
+  if (Array.isArray(saved)) saved.filter(id => typeof id === 'string').slice(0, MAX_COMPARE).forEach(id => shortlist.push(id));
+} catch { /* storage blocked or empty: start with no list */ }
+function saveShortlist() {
+  try {
+    if (shortlist.length) localStorage.setItem(SHORTLIST_KEY, JSON.stringify(shortlist));
+    else localStorage.removeItem(SHORTLIST_KEY);
+  } catch { /* storage blocked: the list still works until the page closes */ }
+}
 
 function renderSaveButton() {
   const d = cur(), id = d && state.sel >= 0 ? d.H.id[state.sel] : null;
@@ -1029,19 +1061,21 @@ function renderCompare() {
     + row('Schools', c => [c.zone('ES'), c.zone('MS'), c.zone('HS')].map(esc).join('<br>'))
     + '</tbody>';
   $('compareNote').textContent = (shortlist.length < 2 ? 'Open another home and press Add to compare to see them side by side. ' : '')
-    + 'Each home is shown at its likely sale price with the down payment from your savings and no HOA dues. The list is kept only until you close the page.';
+    + 'Each home is shown at its likely sale price with the down payment from your savings and no HOA dues. The list (home IDs only) is saved in this browser until you clear it; budget numbers are never saved.';
 }
 
 $('rSave').addEventListener('click', () => {
   const id = cur().H.id[state.sel], k = shortlist.indexOf(id);
   if (k >= 0) shortlist.splice(k, 1); else if (shortlist.length < MAX_COMPARE) shortlist.push(id);
+  saveShortlist();
   renderCompare();
 });
 $('compareTable').addEventListener('click', e => {
   const open = e.target.closest('[data-open]'), remove = e.target.closest('[data-remove]');
   if (open) selectHome(+open.dataset.open, { from: 'compare' });
-  if (remove) { shortlist.splice(shortlist.indexOf(remove.dataset.remove), 1); renderCompare(); }
+  if (remove) { shortlist.splice(shortlist.indexOf(remove.dataset.remove), 1); saveShortlist(); renderCompare(); }
 });
+$('compareClear').addEventListener('click', () => { shortlist.length = 0; saveShortlist(); renderCompare(); });
 $('compareCopy').addEventListener('click', async () => {
   const btn = $('compareCopy');
   const link = location.href.split('#')[0] + '#/compare/' + state.market + '/' + shortlist.map(encodeURIComponent).join(',');
@@ -1162,7 +1196,7 @@ function renderVerdict(cost) {
   announce('detailAnnounce', `${cur().H.addr[state.sel]}: about ${fmtUSD(cost.total)} a month. ${v.label ? v.label + ', ' : ''}${leftWords(v.left)}.`);
 }
 
-['affPrice', 'affIns', 'affHoa', 'affMaint', 'stressIns', 'stressTax'].forEach(id => $(id).addEventListener('input', renderAfford));
+['affPrice', 'affIns', 'affHoa', 'affMaint', 'affRent', 'stressIns', 'stressTax'].forEach(id => $(id).addEventListener('input', renderAfford));
 $('affDown').addEventListener('input', () => { aff.downTyped = $('affDown').value.trim() !== ''; renderAfford(); });
 $('affRate').addEventListener('input', () => { aff.rateMoved = true; renderAfford(); });
 $('affDrop').addEventListener('input', renderAfford);
@@ -1192,7 +1226,7 @@ function buildPrintSheet() {
     + `<p>${byId('r-headline').innerHTML}</p></div>`;
   if (withHome) {
     html += `<div><h2>${esc(byId('rAddr').textContent)}</h2><p>${esc(byId('rParcel').textContent)} · checked at $${esc(byId('affPrice').value)}</p>`
-      + `<table>${byId('affTable').innerHTML.replace(/<small>.*?<\/small>/g, '').replace(/<tr><td>HOA dues<\/td><td>\$0<\/td><\/tr>/, '')}</table>`
+      + `<table>${byId('affTable').innerHTML.replace(/<small>.*?<\/small>/g, '').replace(/<tr><td>(HOA dues|Maintenance reserve)<\/td><td>\$0<\/td><\/tr>/g, '')}</table>`
       + `<p>${byId('affVerdict').innerHTML}</p><p>${esc(byId('affWhatIfNote').textContent)}</p>`
       + `<p>${byId('affInterest').innerHTML}</p>`
       + `<table><tbody>${[...byId('affCash').querySelectorAll('div')].map(d => {
@@ -1730,7 +1764,7 @@ async function setMarket(market, selectId) {
   setupFilters(d); applyFilters();
   renderCountyFit();
   const shared = parseScreenRoute(location.hash).compare;
-  if (shared) shared.forEach(id => { if (d.H.id.includes(id) && !shortlist.includes(id) && shortlist.length < MAX_COMPARE) shortlist.push(id); });
+  if (shared) { shared.forEach(id => { if (d.H.id.includes(id) && !shortlist.includes(id) && shortlist.length < MAX_COMPARE) shortlist.push(id); }); saveShortlist(); }
   if (selectId) {
     const i = d.H.id.indexOf(selectId);
     if (i >= 0) selectHome(i, { from: 'link' });

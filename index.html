@@ -439,6 +439,8 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 .how-sure b { font-weight: 600; }
 .stress-inputs { display: grid; grid-template-columns: auto 7rem; gap: var(--sp-8) var(--sp-12); align-items: center; font-size: var(--fs-sm); margin-bottom: var(--sp-8); }
 .stress-table td { font-size: var(--fs-sm); }
+.rent-buy { margin: var(--sp-12) 0; font-size: var(--fs-sm); }
+.rent-buy p + p, .rent-buy p + .table-wrap { margin-top: var(--sp-8); }
 .aff-check { margin: var(--sp-16) 0 0; font-size: var(--fs-sm); line-height: 1.5; }
 .aff-table { margin-top: var(--sp-12); }
 .aff-table td { padding: var(--sp-8) 0 var(--sp-8) var(--sp-16); }
@@ -678,7 +680,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
         </div>
         <div class="info-part" id="privacy">
       <h4 class="info-h">Privacy</h4>
-      <p class="lead" id="mPrivacy">Nothing you type is sent anywhere or saved. Refreshing or closing the page clears it. There are no accounts, cookies, or analytics. The page loads its files (including fonts and icons) only from this site, and its security policy blocks requests to anywhere else. Links you choose to click, like the county record, open other sites.</p>
+      <p class="lead" id="mPrivacy">Nothing you type is sent anywhere or saved. Refreshing or closing the page clears it. There are no accounts, cookies, or analytics. The one thing the site saves is the list of homes you add to compare (their parcel IDs only), in this browser, until you clear it. The page loads its files (including fonts and icons) only from this site, and its security policy blocks requests to anywhere else. Links you choose to click, like the county record, open other sites.</p>
         </div>
         <div class="info-part" id="limits">
       <h4 class="info-h">What it can’t do</h4>
@@ -1011,11 +1013,13 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
               <label class="aff-field"><span>Insurance quote <em>(optional)</em></span><span class="aff-box">$<input type="text" id="affIns" inputmode="numeric" autocomplete="off" placeholder="per year"></span><small id="affInsNote"></small></label>
               <label class="aff-field"><span>HOA dues <em>(optional)</em></span><span class="aff-box">$<input type="text" id="affHoa" inputmode="numeric" autocomplete="off" placeholder="per month"></span><small id="affHoaNote">Many Forsyth subdivisions have them. Blank counts as $0.</small></label>
               <label class="aff-field"><span>Maintenance reserve <em>(optional)</em></span><span class="aff-box">$<input type="text" id="affMaint" inputmode="numeric" autocomplete="off" placeholder="per month"></span><small id="affMaintNote">Money set aside each month for repairs. Blank counts as $0.</small></label>
+              <label class="aff-field"><span>Your rent now <em>(optional)</em></span><span class="aff-box">$<input type="text" id="affRent" inputmode="numeric" autocomplete="off" placeholder="per month"></span><small>For the rent vs. buy check. Stays on this device.</small></label>
             </div>
             <p class="aff-check" id="affPriceCheck"></p>
             <table class="aff-table" id="affTable"></table>
             <p class="fine" id="affEscrow"></p>
             <p class="aff-interest" id="affInterest"></p>
+            <div class="rent-buy" id="affRentBuy"></div>
             <details class="amort no-print" id="affAmortWrap"><summary>Year-by-year loan table</summary><div class="table-wrap"><table id="affAmort"></table></div></details>
             <p class="aff-verdict" id="affVerdict"></p>
             <div class="split-bar" id="affBar" role="img"><span class="seg-costs" id="aff-bar-costs"></span><span class="seg-housing" id="aff-bar-home"></span><span class="seg-left" id="aff-bar-left"></span></div>
@@ -1054,7 +1058,7 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
       </section>
 
       <section class="compare-homes" id="compareSec" aria-labelledby="compareTitle" hidden>
-        <h3 class="sec" id="compareTitle">Compare homes <button class="linkish sec-act no-print" type="button" id="compareCopy">Copy compare link</button></h3>
+        <h3 class="sec" id="compareTitle">Compare homes <button class="linkish sec-act no-print" type="button" id="compareCopy">Copy compare link</button> <button class="linkish sec-act no-print" type="button" id="compareClear">Clear saved list</button></h3>
         <div class="table-wrap"><table class="compare-table" id="compareTable"></table></div>
         <p class="fine" id="compareNote"></p>
       </section>
@@ -1232,10 +1236,10 @@ footer .aside { color: var(--outline); font-size: var(--fs-sm); margin-top: var(
 </div>
 
 <!-- python tools/build.py writes these version numbers; don't edit them by hand. -->
-<script src="assets/site-data.js?v=b8bb1061a0"></script>
-<script src="assets/planner-math.js?v=b8bb1061a0"></script>
-<script src="assets/budget-worksheet.js?v=b8bb1061a0"></script>
-<script src="assets/screens.js?v=b8bb1061a0"></script>
-<script src="assets/app.js?v=b8bb1061a0"></script>
+<script src="assets/site-data.js?v=972c6bcc45"></script>
+<script src="assets/planner-math.js?v=972c6bcc45"></script>
+<script src="assets/budget-worksheet.js?v=972c6bcc45"></script>
+<script src="assets/screens.js?v=972c6bcc45"></script>
+<script src="assets/app.js?v=972c6bcc45"></script>
 </body>
 </html>
